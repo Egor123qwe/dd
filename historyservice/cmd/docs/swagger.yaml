@@ -1,0 +1,80 @@
+definitions:
+  model.Lease:
+    properties:
+      cost:
+        type: number
+      duration:
+        type: integer
+      id:
+        type: string
+      rating:
+        type: integer
+    type: object
+  model.Rent:
+    properties:
+      cost:
+        type: number
+      duration:
+        type: integer
+      id:
+        type: string
+      rating:
+        type: integer
+    type: object
+host: 0.0.0.0:8899
+info:
+  contact: {}
+  title: API Documentation
+  version: "1.0"
+paths:
+  /api/v1/user/history/lease:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns Lease History of User
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Lease'
+            type: array
+        "404":
+          description: user has no history
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: History
+      tags:
+      - History
+  /api/v1/user/history/rent:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns Rent History of User
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Rent'
+            type: array
+        "404":
+          description: user has no history
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: History
+      tags:
+      - History
+swagger: "2.0"

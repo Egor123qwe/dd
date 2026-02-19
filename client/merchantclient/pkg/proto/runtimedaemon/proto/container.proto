@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package runtime;
+
+option go_package = "./";
+
+service Container {
+    rpc GetLogsStream(ContainerLogsStreamReq) returns (stream ContainerLogs) {};
+}
+
+// will use current template
+message ContainerLogsStreamReq {
+    // if templateID is empty, will use current
+    optional string templateID = 1;
+    // Number of lines from container startup that should be skipped
+    uint32 offset              = 2;
+    // Max number of rows in response
+    uint32 rows_in_resp        = 3;
+    // use this param to set count of logs that you need
+    // P.S. this will be last logs from container
+    optional uint32 tail       = 4;
+}
+message ContainerLogs {
+    repeated string rows = 1;
+}
+
+message ContainerConfiguration {
+    message Options {
+        message SharedVolume {
+            message Credentials {
+                string accessKeyID     = 1;
+                string secretAccessKey = 2;
+            }
+
+            Credentials credentials     = 1;
+            // mount path in container
+            // if empty, will use default
+            optional string volumeMount = 2;
+            string   bucketName         = 3;
+        }
+
+        // if empty, will be skipped
+        optional SharedVolume shared_volume = 1;
+    }
+
+    Options options    = 1;
+    string templateID  = 2;
+}
+
+message ContainerAuthConfiguration {
+    message Credentials {
+        string login    = 1;
+        string password = 2;
+    }
+
+    // if enabled, auth will be added to ports that supports authentication
+    // see TemplatePort message for more details
+    bool                 enabled     = 1;
+    optional Credentials credentials = 2;
+}
+
+
+message ContainerState {
+    enum Status {
+      Running   = 0;
+      Launching = 1;
+      Stopped   = 2;
+      Error     = 3;
+    }
+
+    message SharedVolume {
+        bool enabled = 1;
+    }
+
+    message Port {
+      // local_port is the template_port (of course if template image correctly configured)
+      // local_port have some transformations:
+      //    local_port
+      // -> host_port (host port in hypeOS)
+      // -> real_port (port after auth proxy (if auth enabled for this port))
+      string local_port  = 1; // not equal to container_port in case of [auth_enabled = true]
+      string host_port   = 2;
+    }
+
+    string                templateID = 1; // TemplateID that was used to create the container
+    repeated Port         ports      = 2;
+
+    SharedVolume          shared_volume = 3;
+
+    Status status         = 4;
+    string status_msg     = 5; // Can be useful in error (also "Stopped") case
+}
+
+message ContainerAuthState {
+    message Port {
+        string inPort  = 1;
+        string outPort = 2;
+    }
+
+    bool           enabled = 1;
+    repeated Port  ports   = 2;
+}

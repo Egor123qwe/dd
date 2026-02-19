@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package pricing;
+
+option go_package = "pricing.v1;pricingv1";
+
+service Price {
+  rpc Evaluate(HardwareRequest) returns (HardwareResponse);
+}
+
+// Входящее сообщение без цен
+message HardwareRequest {
+  string id = 1;
+  int32 load_speed = 2;
+  int32 upload_speed = 3;
+  int32 ping = 4;
+  int64 total_ram = 5;
+  int64 available_ram = 6;
+  int64 used_ram = 7;
+
+  repeated CPURequest cpus = 8;
+  repeated GPURequest gpus = 9;
+  repeated StorageRequest storages = 10;
+}
+
+message CPURequest {
+  int32 available = 2;
+  string name = 3;
+  int32 total = 4;
+}
+
+message GPURequest {
+  string name = 2;
+  int64 available = 3;
+  int64 used = 4;
+  int64 total = 5;
+  float dlperf = 6;
+}
+
+message StorageRequest {
+  string type = 2;
+  int64 available = 3;
+  int64 used = 4;
+  int64 total = 5;
+  string name = 6;
+  float bandwidth = 7;
+}
+
+// Выходное сообщение с добавленными ценами
+message HardwareResponse {
+  string id = 1;
+  int32 load_speed = 2;
+  int32 upload_speed = 3;
+  int32 ping = 4;
+  int64 total_ram = 5;
+  int64 available_ram = 6;
+  int64 used_ram = 7;
+  float total_price = 8;
+  string status = 9;
+  float price_internet = 10;
+  float price_ram = 11;
+
+  repeated CPUResponse cpus = 12;
+  repeated GPUResponse gpus = 13;
+  repeated StorageResponse storages = 14;
+}
+
+message CPUResponse {
+  string id = 1;
+  int32 available = 2;
+  string name = 3;
+  int32 total = 4;
+  float price = 5;
+}
+
+message GPUResponse {
+  string id = 1;
+  string name = 2;
+  int64 available = 3;
+  int64 used = 4;
+  int64 total = 5;
+  float dlperf = 6;
+  float price = 7;
+}
+
+message StorageResponse {
+  string id = 1;
+  string type = 2;
+  int64 available = 3;
+  int64 used = 4;
+  int64 total = 5;
+  string name = 6;
+  float bandwidth = 7;
+  float price = 8;
+}

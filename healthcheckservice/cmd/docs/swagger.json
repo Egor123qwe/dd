@@ -1,0 +1,643 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "API Documentation",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "0.0.0.0:9000",
+    "paths": {
+        "/api/v1/status/rent/client": {
+            "get": {
+                "description": "This endpoint returns Rent Status of User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Client"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user has no rent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/status/rent/client/{session_id}": {
+            "get": {
+                "description": "This endpoint returns Rent Status of User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Status",
+                "parameters": [
+                    {
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Client"
+                        }
+                    },
+                    "404": {
+                        "description": "user has no rent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/status/rent/merchant/{session_id}": {
+            "get": {
+                "description": "This endpoint returns Rent Statuses of User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Status",
+                "parameters": [
+                    {
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Merchant"
+                        }
+                    },
+                    "404": {
+                        "description": "user has no rent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/status/session": {
+            "get": {
+                "description": "This endpoint returns session list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Status",
+                "responses": {
+                    "200": {
+                        "description": "session_id list",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user has no sessions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/status/session/{session_id}": {
+            "get": {
+                "description": "This endpoint returns session list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Status",
+                "responses": {
+                    "200": {
+                        "description": "merchant session",
+                        "schema": {
+                            "$ref": "#/definitions/model.Session"
+                        }
+                    },
+                    "404": {
+                        "description": "user has no sessions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "message.ClientAuthentication": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.ClientEnpoints": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.ClientNetwork": {
+            "type": "object",
+            "properties": {
+                "piko": {
+                    "$ref": "#/definitions/message.ClientPiko"
+                },
+                "tailscale": {
+                    "$ref": "#/definitions/message.ClientTailscale"
+                }
+            }
+        },
+        "message.ClientPiko": {
+            "type": "object",
+            "properties": {
+                "endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/message.ClientEnpoints"
+                    }
+                }
+            }
+        },
+        "message.ClientSettings": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/message.ClientNetwork"
+                },
+                "template": {
+                    "$ref": "#/definitions/message.ClientTemplate"
+                }
+            }
+        },
+        "message.ClientTailscale": {
+            "type": "object",
+            "properties": {
+                "auth_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.ClientTemplate": {
+            "type": "object",
+            "properties": {
+                "authentication": {
+                    "$ref": "#/definitions/message.ClientAuthentication"
+                },
+                "short_description": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.MerchantAuthentication": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.MerchantEndpoints": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "template_port": {
+                    "type": "integer"
+                }
+            }
+        },
+        "message.MerchantEnv": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.MerchantNetwork": {
+            "type": "object",
+            "properties": {
+                "piko": {
+                    "$ref": "#/definitions/message.MerchantPiko"
+                },
+                "tailscale": {
+                    "$ref": "#/definitions/message.MerchantTailscale"
+                }
+            }
+        },
+        "message.MerchantPiko": {
+            "type": "object",
+            "properties": {
+                "auth_key": {
+                    "type": "string"
+                },
+                "endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/message.MerchantEndpoints"
+                    }
+                }
+            }
+        },
+        "message.MerchantPorts": {
+            "type": "object",
+            "properties": {
+                "auth": {
+                    "type": "boolean"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.MerchantSettings": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/message.MerchantNetwork"
+                },
+                "template": {
+                    "$ref": "#/definitions/message.MerchantTemplate"
+                }
+            }
+        },
+        "message.MerchantTailscale": {
+            "type": "object",
+            "properties": {
+                "auth_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "message.MerchantTemplate": {
+            "type": "object",
+            "properties": {
+                "authentication": {
+                    "$ref": "#/definitions/message.MerchantAuthentication"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/message.MerchantEnv"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_name": {
+                    "type": "string"
+                },
+                "image_tag": {
+                    "type": "string"
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/message.MerchantPorts"
+                    }
+                },
+                "short_description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "use_gpu": {
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.CPU": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Client": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "paid": {
+                    "type": "boolean"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "settings": {
+                    "$ref": "#/definitions/message.ClientSettings"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "template_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.GPU": {
+            "type": "object",
+            "properties": {
+                "available_vram": {
+                    "type": "integer"
+                },
+                "avg_dlperf": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "total_vram": {
+                    "type": "integer"
+                },
+                "used_vram": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Merchant": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "settings": {
+                    "$ref": "#/definitions/message.MerchantSettings"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PrePull": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "template_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Session": {
+            "type": "object",
+            "properties": {
+                "available_ram": {
+                    "type": "integer"
+                },
+                "cpus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CPU"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "gpus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GPU"
+                    }
+                },
+                "load_speed": {
+                    "type": "number"
+                },
+                "ping": {
+                    "type": "number"
+                },
+                "prepull": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PrePull"
+                    }
+                },
+                "price_internet": {
+                    "type": "number"
+                },
+                "price_ram": {
+                    "type": "number"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "storages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Storage"
+                    }
+                },
+                "total_price": {
+                    "type": "number"
+                },
+                "total_ram": {
+                    "type": "integer"
+                },
+                "upload_speed": {
+                    "type": "number"
+                },
+                "used_ram": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Storage": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "integer"
+                },
+                "bandwidth": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "used": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

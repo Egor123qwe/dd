@@ -1,0 +1,18 @@
+http:
+  host: 0.0.0.0
+  port: 8095
+
+Database:
+  Host: ""
+  Port: ""
+  User: ""
+  Password: ""
+  Name: ""
+
+Api:
+  Auth:
+    URL: "https://api.roy9.ru"
+
+Tracer:
+  Endpoint: "jaeger-collector.jaeger.svc.cluster.local:4318"
+  Service: "feedbackservice"

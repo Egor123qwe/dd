@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поставщик — Аренда</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #161922;
+      --border: #2a2e3a;
+      --text: #e6e9ef;
+      --muted: #8b909e;
+      --accent: #7dcfff;
+      --accent-dim: #5fa8d6;
+      --success: #a6e3a1;
+      --danger: #f38ba8;
+      --radius: 12px;
+      --content-max: 560px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.5rem 3rem;
+    }
+    .appHeader {
+      width: 100%;
+      max-width: var(--content-max);
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .appTitle {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .content {
+      width: 100%;
+      max-width: var(--content-max);
+      flex: 1;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 2rem;
+      width: 100%;
+    }
+    .state-block {
+      padding: 1rem 1.25rem;
+      background: var(--bg);
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+    }
+    .state-label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .state-value {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .state-value.off { color: var(--muted); }
+    .state-value.connecting { color: var(--accent); }
+    .state-value.error { color: var(--danger); }
+    .state-value.connected { color: var(--success); }
+    .state-value.ready,
+    .state-value.inrent { color: var(--success); }
+    .state-value.disabled { color: var(--muted); }
+    .state-value.configuring { color: var(--accent); }
+    #connectionText, #rentStatusText { font-weight: 600; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.5rem 0;
+      font-size: 0.85rem;
+    }
+    .row .label { color: var(--muted); min-width: 0; }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.35rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .form-group input::placeholder { color: var(--muted); }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-connect, .btn-start {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-connect:hover:not(:disabled), .btn-start:hover:not(:disabled) { background: var(--accent-dim); }
+    .btn-stop {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-stop:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-stop:disabled { background: var(--border); color: var(--muted); }
+    .btn-disconnect {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 0.25rem;
+    }
+    .btn-disconnect:hover { border-color: var(--danger); color: var(--danger); }
+    .panel { display: none; }
+    .panel.visible { display: block; }
+    .appIntro {
+      margin: 0 0 1.5rem;
+      padding: 1rem 1.25rem;
+      background: rgba(125, 207, 255, 0.06);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      width: 100%;
+    }
+    .cardHint {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .form-group label { letter-spacing: 0.01em; }
+    .toggleHardware {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.6rem 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .toggleHardware:hover {
+      color: var(--text);
+    }
+    .hardwareDetails {
+      margin-top: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+    }
+    .hardwareDetails .detailRow {
+      display: grid;
+      grid-template-columns: 11em 1fr;
+      gap: 0.75rem;
+      align-items: baseline;
+      margin: 0;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hardwareDetails .detailRow:last-of-type { border-bottom: none; }
+    .hardwareDetails .detailRow strong {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .hardwareDetails .detailBlock {
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hardwareDetails .detailBlock strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .hardwareDetails .detailBlock .storageList {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .hardwareDetails .detailBlock .storageList li {
+      display: grid;
+      grid-template-columns: 11em 1fr;
+      gap: 0.75rem;
+      align-items: baseline;
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hardwareDetails .detailBlock .storageList li:last-child { border-bottom: none; }
+    .hardwareDetails .detailBlock .storageList .storageName { color: var(--muted); font-weight: 500; }
+    .hardwareDetails .detailBlock .storageList .storageSize { color: var(--text); }
+    .rent-error-row {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0;
+      font-size: 0.9rem;
+      color: var(--danger);
+      line-height: 1.4;
+    }
+    @media (max-width: 768px) {
+      .app { padding: 1.25rem 1rem 2rem; }
+      .appHeader { margin-bottom: 1rem; }
+      .card { padding: 1.25rem 1.25rem; }
+      .state-block { padding: 0.85rem 1rem; margin-bottom: 1rem; }
+      .row { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="content">
+      <p class="appIntro">
+        Подключитесь к серверу и переведите машину в режим приёма аренды. Покупатели смогут подключаться к вашему сеансу и арендовать ресурсы.
+      </p>
+  <div class="card">
+    <div class="state-block">
+      <div class="row">
+        <span class="label" title="Есть ли связь с сервером аренды">Связь с сервером</span>
+        <span class="state-value connecting" id="connectionText">Загрузка…</span>
+      </div>
+      <div id="rentRow" class="row" style="display: none;">
+        <span class="label" title="Готов ли сеанс к приёму покупателя">Состояние сеанса</span>
+        <span class="state-value" id="rentStatusText">—</span>
+      </div>
+      <div id="stateRentTime" class="row" style="display: none;">
+        <span class="label" title="Длительность текущего сеанса аренды">Время сеанса</span>
+        <span id="rentTimeText">—</span>
+      </div>
+      <div id="stateRentEarnings" class="row" style="display: none;">
+        <span class="label" title="Сколько заработано за текущий сеанс аренды (90% от суммы покупателя)">Заработано</span>
+        <span id="rentEarningsText">—</span>
+      </div>
+      <div id="rentErrorRow" class="rent-error-row" style="display: none;" role="alert"></div>
+    </div>
+
+    <div id="panelConnect" class="panel">
+      <p class="cardHint">Введите данные учётной записи для подключения к серверу.</p>
+      <div class="form-group">
+        <label for="email" title="Адрес электронной почты">Адрес почты</label>
+        <input type="email" id="email" placeholder="Введите адрес почты" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password" title="Пароль от учётной записи">Пароль</label>
+        <input type="password" id="password" placeholder="Введите пароль" autocomplete="current-password">
+      </div>
+      <div class="actions">
+        <button class="btn-connect" id="btnLogin" title="Войти и подключиться к серверу">Войти</button>
+      </div>
+    </div>
+
+    <div id="panelRent" class="panel">
+      <p class="cardHint">Включите приём аренды — покупатель сможет выбрать вас и запустить сеанс. Завершите сеанс, когда аренда закончится.</p>
+      <div class="form-group">
+        <label for="nodeName" title="Название вычислительного узла (отображается у покупателя)">Название вычислительного узла</label>
+        <input type="text" id="nodeName" placeholder="Например: Офисный ПК, Игровая станция" autocomplete="off">
+      </div>
+      <div class="actions">
+        <button class="btn-start" id="btnStart" title="Подготовить машину к приёму аренды от покупателя">Включить приём аренды</button>
+        <button class="btn-stop" id="btnStop" style="display: none;" title="Завершить текущий сеанс аренды">Завершить сеанс</button>
+        <button class="btn-disconnect" id="btnDisconnect" title="Отключиться от сервера">Выйти</button>
+      </div>
+      <button type="button" class="toggleHardware" id="btnToggleHardware" aria-expanded="false">
+        <span id="hardwareToggleIcon">▶</span> Характеристики моего компьютера
+      </button>
+      <div id="hardwareDetails" class="hardwareDetails" style="display: none;"></div>
+    </div>
+  </div>
+    </main>
+  </div>
+  <script>
+    const connectionText = document.getElementById('connectionText');
+    const rentRow = document.getElementById('rentRow');
+    const rentStatusText = document.getElementById('rentStatusText');
+    const stateRentTime = document.getElementById('stateRentTime');
+    const rentTimeText = document.getElementById('rentTimeText');
+    const stateRentEarnings = document.getElementById('stateRentEarnings');
+    const rentEarningsText = document.getElementById('rentEarningsText');
+    const rentErrorRow = document.getElementById('rentErrorRow');
+    const panelConnect = document.getElementById('panelConnect');
+    const panelRent = document.getElementById('panelRent');
+    const emailEl = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const btnLogin = document.getElementById('btnLogin');
+    const nodeNameEl = document.getElementById('nodeName');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const btnToggleHardware = document.getElementById('btnToggleHardware');
+    const hardwareToggleIcon = document.getElementById('hardwareToggleIcon');
+    const hardwareDetails = document.getElementById('hardwareDetails');
+    let hardwareExpanded = false;
+    let hardwareData = null;
+
+    const STORAGE_ACCESS = 'access_token';
+    const STORAGE_REFRESH = 'refresh_token';
+
+    function getStoredTokens() {
+      try {
+        const at = localStorage.getItem(STORAGE_ACCESS);
+        const rt = localStorage.getItem(STORAGE_REFRESH);
+        return { accessToken: at, refreshToken: rt };
+      } catch (e) { return {}; }
+    }
+    function setStoredTokens(accessToken, refreshToken) {
+      try {
+        if (accessToken != null) localStorage.setItem(STORAGE_ACCESS, accessToken);
+        if (refreshToken != null) localStorage.setItem(STORAGE_REFRESH, refreshToken);
+      } catch (e) {}
+    }
+    function clearStoredTokens() {
+      try {
+        localStorage.removeItem(STORAGE_ACCESS);
+        localStorage.removeItem(STORAGE_REFRESH);
+      } catch (e) {}
+    }
+
+    const CONNECTION_RU = { loading: 'Загрузка…', off: 'Отключено', connecting: 'Подключение…', error: 'Ошибка', connected: 'Подключено' };
+    const RENT_RU = {
+      Disabled: 'Не готов',
+      Configuring: 'Подготовка',
+      Ready: 'Готов к приёму',
+      InRent: 'Идёт аренда'
+    };
+
+    let uiState = 'loading';
+    let rentStatus = null;
+    let isPreparingRent = false;
+    var configStartTime = 0;
+    var configTimerIntervalId = null;
+    var rentTimeBaseSeconds = 0;
+    var rentTimeBaseReceivedAt = 0;
+    var rentTimeIntervalId = null;
+    var rentTotalPrice = 0;
+    var rentEarningsIntervalId = null;
+    let isReconnecting = false;
+
+    (function showPreloader() {
+      connectionText.textContent = CONNECTION_RU.loading;
+      connectionText.className = 'state-value connecting';
+      panelConnect.classList.remove('visible');
+      panelRent.classList.remove('visible');
+    })();
+
+    function formatCountdown(ms) {
+      ms = Math.max(0, ms);
+      var s = Math.floor(ms / 1000);
+      var m = Math.floor(s / 60);
+      s = s % 60;
+      return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function getConfigRemainingMs() {
+      return Math.max(0, RENT_START_TIMEOUT_MS - (Date.now() - configStartTime));
+    }
+
+    function stopConfigTimer() {
+      if (configTimerIntervalId != null) {
+        clearInterval(configTimerIntervalId);
+        configTimerIntervalId = null;
+      }
+    }
+
+    function startConfigTimer() {
+      stopConfigTimer();
+      configStartTime = Date.now();
+      configTimerIntervalId = setInterval(function() {
+        if (!isPreparingRent || uiState !== 'connected') {
+          stopConfigTimer();
+          return;
+        }
+        rentStatusText.textContent = 'Подготовка… ' + formatCountdown(getConfigRemainingMs());
+      }, 1000);
+    }
+
+    function parseRentTimeToSeconds(str) {
+      if (str == null || typeof str !== 'string') return 0;
+      var parts = str.trim().split(':');
+      if (parts.length !== 3) return 0;
+      return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10) || 0;
+    }
+
+    function formatRentTime(totalSeconds) {
+      totalSeconds = Math.max(0, Math.floor(totalSeconds));
+      var h = Math.floor(totalSeconds / 3600);
+      var m = Math.floor((totalSeconds % 3600) / 60);
+      var s = totalSeconds % 60;
+      return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function stopRentTimeTicker() {
+      if (rentTimeIntervalId != null) {
+        clearInterval(rentTimeIntervalId);
+        rentTimeIntervalId = null;
+      }
+    }
+
+    function startRentTimeTicker() {
+      stopRentTimeTicker();
+      rentTimeIntervalId = setInterval(function() {
+        if (uiState !== 'connected' || rentStatus !== 'InRent') {
+          stopRentTimeTicker();
+          return;
+        }
+        var elapsed = Math.floor((Date.now() - rentTimeBaseReceivedAt) / 1000);
+        rentTimeText.textContent = formatRentTime(rentTimeBaseSeconds + elapsed);
+      }, 1000);
+    }
+
+    function stopRentEarningsTicker() {
+      if (rentEarningsIntervalId != null) {
+        clearInterval(rentEarningsIntervalId);
+        rentEarningsIntervalId = null;
+      }
+    }
+
+    function startRentEarningsTicker() {
+      stopRentEarningsTicker();
+      if (rentTotalPrice <= 0) return;
+      rentEarningsIntervalId = setInterval(function() {
+        if (uiState !== 'connected' || rentStatus !== 'InRent') {
+          stopRentEarningsTicker();
+          return;
+        }
+        var elapsed = Math.floor((Date.now() - rentTimeBaseReceivedAt) / 1000);
+        var totalSeconds = rentTimeBaseSeconds + elapsed;
+        var minutes = Math.floor(totalSeconds / 60);
+        var earnings = rentTotalPrice * minutes * 0.9;
+        rentEarningsText.textContent = earnings.toFixed(2) + ' BYN';
+      }, 1000);
+    }
+
+    function setState(state, detail) {
+      detail = detail || {};
+      uiState = state;
+      connectionText.textContent = CONNECTION_RU[state] || detail.connectionText || CONNECTION_RU.off;
+      connectionText.className = 'state-value ' + (detail.connectionClass || 'off');
+
+      rentErrorRow.style.display = 'none';
+      rentErrorRow.textContent = '';
+      if (state === 'connected') {
+        rentRow.style.display = 'flex';
+        if (detail.rent_error) {
+          rentErrorRow.textContent = detail.rent_error;
+          rentErrorRow.style.display = 'block';
+        }
+        if (detail.rent_status === 'Configuring') {
+          if (configTimerIntervalId == null) startConfigTimer();
+          rentStatusText.textContent = 'Подготовка… ' + formatCountdown(getConfigRemainingMs());
+        } else {
+          stopConfigTimer();
+          rentStatusText.textContent = RENT_RU[detail.rent_status] || detail.rent_status || '—';
+        }
+        rentStatusText.className = 'state-value ' + (detail.rent_class || 'disabled');
+        stateRentTime.style.display = detail.rent_status === 'InRent' ? 'flex' : 'none';
+        stateRentEarnings.style.display = detail.rent_status === 'InRent' ? 'flex' : 'none';
+        if (detail.total_price != null && detail.total_price > 0) {
+          rentTotalPrice = detail.total_price;
+        }
+        if (detail.rent_status === 'InRent' && detail.rent_time != null) {
+          rentTimeBaseSeconds = parseRentTimeToSeconds(detail.rent_time);
+          rentTimeBaseReceivedAt = Date.now();
+          rentTimeText.textContent = formatRentTime(rentTimeBaseSeconds);
+          startRentTimeTicker();
+          // Обновляем заработок сразу и запускаем тикер
+          if (rentTotalPrice > 0) {
+            var minutes = Math.floor(rentTimeBaseSeconds / 60);
+            var earnings = rentTotalPrice * minutes * 0.9;
+            rentEarningsText.textContent = earnings.toFixed(2) + ' BYN';
+          }
+          startRentEarningsTicker();
+        } else {
+          stopRentTimeTicker();
+          stopRentEarningsTicker();
+          rentTimeText.textContent = detail.rent_time != null ? detail.rent_time : '—';
+          rentEarningsText.textContent = '—';
+        }
+
+        rentStatus = detail.rent_status;
+        var showStop = rentStatus && rentStatus !== 'Disabled';
+        btnStart.style.display = showStop ? 'none' : '';
+        btnStop.style.display = showStop ? '' : 'none';
+        btnStop.disabled = false;
+        if (nodeNameEl) nodeNameEl.disabled = !!showStop;
+      } else {
+        rentRow.style.display = 'none';
+        if (nodeNameEl) nodeNameEl.disabled = false;
+        stateRentTime.style.display = 'none';
+        stateRentEarnings.style.display = 'none';
+        stopConfigTimer();
+        stopRentTimeTicker();
+        stopRentEarningsTicker();
+      }
+
+      var showLogin = state === 'error' || (state === 'off' && !getStoredTokens().accessToken);
+      panelConnect.classList.toggle('visible', showLogin && state !== 'loading');
+      panelRent.classList.toggle('visible', state === 'connected');
+    }
+
+    async function fetchStatus() {
+      if (uiState === 'connecting' || uiState === 'loading') return;
+      try {
+        const r = await fetch('/api/status');
+        const d = await r.json();
+        if (d.connected) {
+          var rs = d.rent_status || 'Disabled';
+          if (isPreparingRent && rs === 'Disabled') {
+            rs = 'Configuring';
+          }
+          if (rs === 'Ready' || rs === 'InRent') {
+            isPreparingRent = false;
+          }
+          setState('connected', {
+            connectionClass: 'connected',
+            rent_status: rs,
+            rent_class: rs === 'InRent' ? 'inrent' : rs === 'Ready' ? 'ready' : rs === 'Configuring' ? 'configuring' : 'disabled',
+            rent_time: d.rent_time,
+            total_price: d.total_price
+          });
+        } else {
+          if (uiState !== 'error' && uiState !== 'connecting') setState('off', {});
+        }
+      } catch (e) {
+        if (uiState === 'connected') setState('off', {});
+      }
+    }
+
+    async function doConnect(accessToken) {
+      const r = await fetch('/api/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessToken })
+      });
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, text };
+    }
+
+    async function doRefresh() {
+      const { refreshToken } = getStoredTokens();
+      if (!refreshToken) return null;
+      const r = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      if (!r.ok) return null;
+      let data;
+      try { data = await r.json(); } catch (e) { return null; }
+      const payload = data.data != null ? data.data : data;
+      if (payload.access_token) {
+        setStoredTokens(payload.access_token, payload.refresh_token != null ? payload.refresh_token : refreshToken);
+        return payload.access_token;
+      }
+      return null;
+    }
+
+    async function connectWithRetry(accessToken, tryRefreshOnce) {
+      let res = await doConnect(accessToken);
+      if (res.ok) return { ok: true };
+      const authError = res.status === 401 || res.status === 400;
+      if (tryRefreshOnce && authError) {
+        const newAccess = await doRefresh();
+        if (newAccess) {
+          res = await doConnect(newAccess);
+          if (res.ok) return { ok: true };
+        }
+        return { ok: false, authFailed: true };
+      }
+      return { ok: false, authFailed: authError };
+    }
+
+    async function tryConnectOnLoad() {
+      const { accessToken } = getStoredTokens();
+      if (!accessToken) {
+        setState('off', {});
+        return;
+      }
+      setState('connecting', { connectionClass: 'connecting' });
+      try {
+        const result = await connectWithRetry(accessToken, true);
+        if (result.ok) {
+          setState('connected', {
+            connectionClass: 'connected',
+            rent_status: 'Disabled',
+            rent_class: 'disabled'
+          });
+          fetchStatus();
+          return;
+        }
+        if (result.authFailed) {
+          clearStoredTokens();
+          setState('error', { connectionText: 'Сеанс истёк. Войдите снова.', connectionClass: 'error' });
+          return;
+        }
+      } catch (e) {}
+      setState('off', { connectionText: 'Нет связи. Повторная попытка через 5 сек.', connectionClass: 'off' });
+    }
+
+    btnLogin.addEventListener('click', async () => {
+      const email = emailEl.value.trim();
+      const password = passwordEl.value;
+      if (!email || !password) return;
+      setState('connecting', { connectionClass: 'connecting' });
+      btnLogin.disabled = true;
+      try {
+        const signInRes = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const signInText = await signInRes.text();
+        if (!signInRes.ok) {
+          setState('error', { connectionText: 'Ошибка входа: ' + (signInText || 'неверный адрес почты или пароль'), connectionClass: 'error' });
+          btnLogin.disabled = false;
+          return;
+        }
+        let data;
+        try { data = JSON.parse(signInText); } catch (e) {
+          setState('error', { connectionText: 'Ошибка ответа сервера', connectionClass: 'error' });
+          btnLogin.disabled = false;
+          return;
+        }
+        // userservice returns { data: { user_id, access_token, refresh_token }, messages, validation }
+        const payload = data.data != null ? data.data : data;
+        const accessToken = payload.access_token;
+        const refreshToken = payload.refresh_token;
+        if (!accessToken) {
+          setState('error', { connectionText: 'Ошибка: нет токена в ответе', connectionClass: 'error' });
+          btnLogin.disabled = false;
+          return;
+        }
+        setStoredTokens(accessToken, refreshToken);
+        const connectResult = await connectWithRetry(accessToken, false);
+        if (connectResult.ok) {
+          setState('connected', {
+            connectionClass: 'connected',
+            rent_status: 'Disabled',
+            rent_class: 'disabled'
+          });
+          fetchStatus();
+        } else {
+          setState('error', { connectionText: 'Ошибка подключения после входа', connectionClass: 'error' });
+        }
+      } catch (e) {
+        setState('error', { connectionText: 'Ошибка: ' + e.message, connectionClass: 'error' });
+      }
+      btnLogin.disabled = false;
+    });
+
+    btnDisconnect.addEventListener('click', async () => {
+      try {
+        await fetch('/api/disconnect', { method: 'POST' });
+      } catch (e) {}
+      clearStoredTokens();
+      setState('off', {});
+    });
+
+    const RENT_START_TIMEOUT_MS = 60000;
+
+    btnStart.addEventListener('click', async () => {
+      var nodeName = (nodeNameEl && nodeNameEl.value) ? nodeNameEl.value.trim() : '';
+      if (!nodeName) {
+        alert('Введите название вычислительного узла (например: Офисный ПК или Игровая станция).');
+        return;
+      }
+      btnStart.disabled = true;
+      isPreparingRent = true;
+      setState('connected', {
+        connectionClass: 'connected',
+        rent_status: 'Configuring',
+        rent_class: 'configuring'
+      });
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, RENT_START_TIMEOUT_MS);
+      try {
+        const r = await fetch('/api/rent/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ node_name: nodeName }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (r.ok) {
+          fetchStatus();
+        } else {
+          isPreparingRent = false;
+          stopConfigTimer();
+          var errText = await r.text();
+          var isUnidentified = /не все компоненты|обратитесь в поддержку/i.test(errText);
+          if (isUnidentified) {
+            setState('connected', {
+              connectionClass: 'connected',
+              rent_status: 'Disabled',
+              rent_class: 'disabled',
+              rent_error: errText || 'Не все компоненты вашего устройства корректно определены; обратитесь в поддержку для добавления оборудования в прайс.'
+            });
+          } else {
+            setState('error', { connectionText: errText || 'Ошибка запуска приёма аренды', connectionClass: 'error' });
+          }
+        }
+      } catch (e) {
+        clearTimeout(timeoutId);
+        isPreparingRent = false;
+        stopConfigTimer();
+        var msg = (e.name === 'AbortError') ? 'Превышено время ожидания ответа от сервера (1 мин)' : e.message;
+        setState('error', { connectionText: 'Ошибка: ' + msg, connectionClass: 'error' });
+      }
+      btnStart.disabled = false;
+    });
+
+    btnStop.addEventListener('click', async () => {
+      btnStop.disabled = true;
+      try {
+        const r = await fetch('/api/rent/stop', { method: 'POST' });
+        if (r.ok) fetchStatus();
+      } catch (e) {
+        setState('error', { connectionText: 'Ошибка: ' + e.message, connectionClass: 'error' });
+      }
+      btnStop.disabled = false;
+    });
+
+    (async function initOnLoad() {
+      setState('loading', { connectionClass: 'connecting' });
+      try {
+        var r = await fetch('/api/status');
+        var d = await r.json();
+        if (d.connected) {
+          var rs = d.rent_status || 'Disabled';
+          if (rs === 'Ready' || rs === 'InRent') isPreparingRent = false;
+          setState('connected', {
+            connectionClass: 'connected',
+            rent_status: rs,
+            rent_class: rs === 'InRent' ? 'inrent' : rs === 'Ready' ? 'ready' : rs === 'Configuring' ? 'configuring' : 'disabled',
+            rent_time: d.rent_time,
+            total_price: d.total_price
+          });
+          fetchStatus();
+          return;
+        }
+        var t = getStoredTokens();
+        if (!t.accessToken) {
+          setState('off', {});
+          return;
+        }
+        setState('connecting', { connectionClass: 'connecting' });
+        try {
+          var result = await connectWithRetry(t.accessToken, true);
+          if (result.ok) {
+            setState('connected', {
+              connectionClass: 'connected',
+              rent_status: 'Disabled',
+              rent_class: 'disabled',
+              total_price: null
+            });
+            fetchStatus();
+            return;
+          }
+          if (result.authFailed) {
+            clearStoredTokens();
+            setState('error', { connectionText: 'Сеанс истёк. Войдите снова.', connectionClass: 'error' });
+            return;
+          }
+        } catch (e) {}
+        setState('off', { connectionText: 'Нет связи. Повторная попытка через 5 сек.', connectionClass: 'off' });
+      } catch (e) {
+        setState('error', { connectionText: 'Нет связи с сервером', connectionClass: 'error' });
+      }
+    })();
+
+    setInterval(fetchStatus, 3000);
+
+    // Автопереподключение: при наличии токена и состоянии off/error периодически пробуем снова
+    setInterval(async function tryReconnect() {
+      if (isReconnecting || uiState === 'loading' || uiState === 'connecting' || uiState === 'connected') return;
+      var t = getStoredTokens();
+      if (!t.accessToken) return;
+      isReconnecting = true;
+      setState('connecting', { connectionClass: 'connecting' });
+      var result = await connectWithRetry(t.accessToken, true);
+      if (result.ok) {
+        setState('connected', {
+          connectionClass: 'connected',
+          rent_status: 'Disabled',
+          rent_class: 'disabled'
+        });
+        fetchStatus();
+      } else if (result.authFailed) {
+        clearStoredTokens();
+        setState('error', { connectionText: 'Сеанс истёк. Войдите снова.', connectionClass: 'error' });
+      } else {
+        setState('off', { connectionText: 'Нет связи. Повторная попытка через 5 сек.', connectionClass: 'off' });
+      }
+      isReconnecting = false;
+    }, 5000);
+
+    function ramKbToGb(kb) {
+      return kb / (1024 * 1024);
+    }
+    function storageToGb(kb) {
+      return kb / (1024 * 1024);
+    }
+    function networkSpeedToMbit(value) {
+      if (value > 5000) return value / 1024;
+      return value;
+    }
+    function formatHardwareDetails(data) {
+      if (!data) return '';
+      var html = '';
+      if (data.ram) {
+        html += '<div class="detailRow"><strong title="Объём оперативной памяти">Оперативная память:</strong> ' +
+          ramKbToGb(data.ram.total || 0).toFixed(1) + ' ГБ (доступно ' + ramKbToGb(data.ram.available || 0).toFixed(1) + ' ГБ)</div>';
+      }
+      if (data.network) {
+        if (data.network.load_speed != null) {
+          html += '<div class="detailRow"><strong>Скорость загрузки:</strong> ' + networkSpeedToMbit(data.network.load_speed).toFixed(1) + ' Мбит/с</div>';
+        }
+        if (data.network.upload_speed != null) {
+          html += '<div class="detailRow"><strong>Скорость отдачи:</strong> ' + networkSpeedToMbit(data.network.upload_speed).toFixed(1) + ' Мбит/с</div>';
+        }
+        if (data.network.ping != null) {
+          html += '<div class="detailRow"><strong title="Сетевая задержка">Задержка:</strong> ' + data.network.ping + ' мс</div>';
+        }
+      }
+      html += '<div class="detailRow"><strong title="Видеокарта">Видеокарта:</strong> ';
+      if (data.gpus && data.gpus.length > 0) {
+        var g = data.gpus[0];
+        var vramText = (g.name || '—');
+        if (g.total_vram != null) {
+          vramText += ' — видеопамять ' + ramKbToGb(g.total_vram).toFixed(1) + ' ГБ';
+          if (g.available_vram != null) {
+            vramText += ' (свободно ' + ramKbToGb(g.available_vram).toFixed(1) + ' ГБ)';
+          }
+        }
+        html += vramText + '</div>';
+      } else {
+        html += 'отсутствует</div>';
+      }
+      if (data.cpus && data.cpus.length > 0) {
+        var c = data.cpus[0];
+        html += '<div class="detailRow"><strong title="Процессор">Процессор:</strong> ' +
+          (c.name || '—') + ' — ядер ' + (c.total || 0) + ' (свободно ' + (c.available || 0) + ')</div>';
+      }
+      if (data.storages && data.storages.length > 0) {
+        html += '<div class="detailBlock"><strong>Хранилища</strong><ul class="storageList">';
+        for (var i = 0; i < data.storages.length; i++) {
+          var s = data.storages[i];
+          var name = (s.type || 'SSD') + ' ' + (s.name || 'Основной диск');
+          var size = 'всего ' + storageToGb(s.total || 0).toFixed(1) + ' ГБ, свободно ' + storageToGb(s.available || 0).toFixed(1) + ' ГБ';
+          html += '<li><span class="storageName">' + name + '</span><span class="storageSize">' + size + '</span></li>';
+        }
+        html += '</ul></div>';
+      }
+      return html || '<p class="cardHint">Не удалось загрузить характеристики.</p>';
+    }
+    async function loadHardware() {
+      if (hardwareData) {
+        hardwareDetails.innerHTML = formatHardwareDetails(hardwareData);
+        hardwareDetails.style.display = 'block';
+        return;
+      }
+      hardwareDetails.innerHTML = '<p class="cardHint">Загрузка характеристик…</p>';
+      hardwareDetails.style.display = 'block';
+      try {
+        var r = await fetch('/api/hardware');
+        if (!r.ok) {
+          hardwareDetails.innerHTML = '<p class="cardHint">Ошибка загрузки характеристик.</p>';
+          return;
+        }
+        hardwareData = await r.json();
+        hardwareDetails.innerHTML = formatHardwareDetails(hardwareData);
+      } catch (e) {
+        hardwareDetails.innerHTML = '<p class="cardHint">Ошибка: ' + e.message + '</p>';
+      }
+    }
+    btnToggleHardware.addEventListener('click', function() {
+      hardwareExpanded = !hardwareExpanded;
+      hardwareToggleIcon.textContent = hardwareExpanded ? '▼' : '▶';
+      btnToggleHardware.setAttribute('aria-expanded', hardwareExpanded);
+      if (hardwareExpanded) {
+        loadHardware();
+      } else {
+        hardwareDetails.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

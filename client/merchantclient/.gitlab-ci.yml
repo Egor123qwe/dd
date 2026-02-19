@@ -1,0 +1,13 @@
+include:
+  - project: 'roy9/infrastructure/ci-cd-templates'
+    file: '/install.yml'
+    ref: main
+
+variables:
+  NEXUS_REPO: https://nexus.roy9.ru/repository/go-binaries/merchantclient
+  BINARY_NAME: merchantclient
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"

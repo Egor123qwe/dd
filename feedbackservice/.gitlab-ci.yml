@@ -1,0 +1,100 @@
+workflow:
+  rules:
+    - changes:
+        - "argo/deployment.yaml"
+      when: never
+    - when: always
+
+stages:
+  - lint
+  - argo
+
+variables:
+  CONTAINER_NAME: feedbackservice
+  CONTAINER_IMAGE: nexus.roy9.ru/repository/docker/feedbackservice
+  BRANCH: $CI_COMMIT_BRANCH
+  NEXUS_REPO: nexus.roy9.ru/repository/docker/feedbackservice
+  DEPLOYMENT_TEMPLATE: k3s/deployment_template.yaml
+  DEPLOYMENT_FILE: argo/deployment.yaml
+
+lint:
+  stage: lint
+  image: golangci/golangci-lint:latest
+  script:
+    - echo "Running golangci-lint..."
+    # Выполняем линтер с выводом отчета прямо в консоль
+    - golangci-lint run ./... --out-format=junit-xml
+  artifacts:
+    paths:
+      - golangci-lint-report.xml
+    when: always
+    reports:
+      junit: golangci-lint-report.xml
+  tags:
+    - k3stest
+  rules:
+    - when: always
+  allow_failure: true
+
+argo:
+  stage: argo
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_IMAGE_TAG: ""
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - echo "Installing required packages..."
+    - apk add --no-cache git curl
+    - echo "Logging into Nexus with user - $CI_REGISTRY_USER"
+    - export BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | sed 's/\//_/g')
+    - export DOCKER_IMAGE_TAG=$BRANCH_NAME.$CI_COMMIT_SHORT_SHA
+    - export VERSION=$(cat VERSION)  # Чтение версии из файла
+    - export FULL_DOCKER_IMAGE_TAG="$DOCKER_IMAGE_TAG.v.$VERSION"  # Создание полного тега с версией
+    - echo $CI_REGISTRY_PASSWORD | docker login nexus.roy9.ru -u $CI_REGISTRY_USER --password-stdin
+
+    # Set up Git with access token for pushing and fetching
+    - git config --global user.email "ci@automation.com"
+    - git config --global user.name "CI Automation"
+    - git remote set-url origin "https://oauth2:${CI_PUSH_TOKEN}@gitlab.roy9.ru/roy9/backend/core/feedbackservice.git"
+
+  script:
+    # Сборка образа с полным тегом на основе ветки, коммита и версии
+    - docker build --no-cache -t "$CONTAINER_IMAGE:$FULL_DOCKER_IMAGE_TAG" .
+    - echo "Full image tag - $CONTAINER_IMAGE:$FULL_DOCKER_IMAGE_TAG"
+
+    # Пушим образ с тегом на основе ветки, коммита и версии в Nexus
+    - docker push "$CONTAINER_IMAGE:$FULL_DOCKER_IMAGE_TAG"
+    - echo "Docker image pushed to Nexus - $CONTAINER_IMAGE:$FULL_DOCKER_IMAGE_TAG"
+
+    # Заменяем в шаблоне переменные и создаем файл деплоймента
+    - sed "s/{{DOCKER_IMAGE_TAG}}/$FULL_DOCKER_IMAGE_TAG/g" k3s/deployment_template.yaml > argo/deployment.yaml
+    - echo "Deployment file created with new image tag"
+
+    # Вывод содержимого созданного файла деплоймента
+    - echo "Displaying the content of the deployment.yaml file:"
+    - cat $DEPLOYMENT_FILE
+
+    # Пушим файл деплоймента в Nexus
+    - echo "Uploading deployment.yaml to Nexus..."
+    - curl -v -u "$CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD" --upload-file $DEPLOYMENT_FILE "$NEXUS_REPO/deployment.yaml"
+    - echo "Deployment file pushed to Nexus."
+
+    # Явное создание или переключение на ветку
+    - git fetch origin
+    - git checkout -b "$CI_COMMIT_BRANCH" || git checkout "$CI_COMMIT_BRANCH"
+
+    # Коммит изменений в файл деплоймента
+    - git add $DEPLOYMENT_FILE
+    - git commit -m "Update deployment image to $FULL_DOCKER_IMAGE_TAG"
+    - git push origin "$CI_COMMIT_BRANCH" --force
+
+  tags:
+    - k3stest
+
+  rules:
+    - when: always

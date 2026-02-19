@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sessionhandler-deployment
+  namespace: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sessionhandler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: sessionhandler
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: api-role
+        vault.hashicorp.com/agent-inject-token: 'true'
+        vault.hashicorp.com/agent-inject-template-BROKER_USERNAME: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-BROKER_PASSWORD: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.password }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_STATEMACHINE_HOST: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_STATEMACHINE_PORT: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_STATEMACHINE_DBNAME: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.db }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_STATEMACHINE_USER: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_STATEMACHINE_PASSWORD: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.password }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_TEMPLATES_PASSWORD: |
+          {{- with secret "secret/data/templates" -}}
+          {{ .Data.password }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_TEMPLATES_HOST: |
+          {{- with secret "secret/data/templates" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_TEMPLATES_PORT: |
+          {{- with secret "secret/data/templates" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_TEMPLATES_DBNAME: |
+          {{- with secret "secret/data/templates" -}}
+          {{ .Data.dbname }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_TEMPLATES_USER: |
+          {{- with secret "secret/data/templates" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_REDIS_HOST: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_REDIS_PORT: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DB_REDIS_PASSWORD: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.password }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-RENT_SETTINGS_PIKO_SECRET_KEY: |
+          {{- with secret "secret/data/piko" -}}
+          {{ .Data.hmac_secret_key }}
+          {{- end }}
+    spec:
+      serviceAccountName: vault-auth
+      containers:
+        - name: sessionhandler
+          image: nexus.roy9.ru/repository/docker/sessionhandler:{{DOCKER_IMAGE_TAG}}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8094
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              set -e  # Завершение при ошибке
+              echo "Экспортируем переменные окружения из секретов Vault..."
+              export BROKER_USERNAME=$(cat /vault/secrets/broker_username) || { echo "Error reading BROKER_USERNAME"; exit 1; }
+              export BROKER_PASSWORD=$(cat /vault/secrets/broker_password) || { echo "Error reading BROKER_PASSWORD"; exit 1; }
+              export DB_STATEMACHINE_HOST=$(cat /vault/secrets/db_statemachine_host) || { echo "Error reading DB_STATEMACHINE_HOST"; exit 1; }
+              export DB_STATEMACHINE_PORT=$(cat /vault/secrets/db_statemachine_port) || { echo "Error reading DB_STATEMACHINE_PORT"; exit 1; }
+              export DB_STATEMACHINE_DBNAME=$(cat /vault/secrets/db_statemachine_dbname) || { echo "Error reading DB_STATEMACHINE_DBNAME"; exit 1; }
+              export DB_STATEMACHINE_USER=$(cat /vault/secrets/db_statemachine_user) || { echo "Error reading DB_STATEMACHINE_USER"; exit 1; }
+              export DB_STATEMACHINE_PASSWORD=$(cat /vault/secrets/db_statemachine_password) || { echo "Error reading DB_STATEMACHINE_PASSWORD"; exit 1; }
+              export DB_TEMPLATES_HOST=$(cat /vault/secrets/db_templates_host) || { echo "Error reading DB_TEMPLATES_HOST"; exit 1; }
+              export DB_TEMPLATES_PORT=$(cat /vault/secrets/db_templates_port) || { echo "Error reading DB_TEMPLATES_PORT"; exit 1; }
+              export DB_TEMPLATES_DBNAME=$(cat /vault/secrets/db_templates_dbname) || { echo "Error reading DB_TEMPLATES_DBNAME"; exit 1; }
+              export DB_TEMPLATES_USER=$(cat /vault/secrets/db_templates_user) || { echo "Error reading DB_TEMPLATES_USER"; exit 1; }
+              export DB_TEMPLATES_PASSWORD=$(cat /vault/secrets/db_templates_password) || { echo "Error reading DB_TEMPLATES_PASSWORD"; exit 1; }
+              
+              export DB_REDIS_HOST=`cat /vault/secrets/db_redis_host` || { echo "Error reading REDIS_HOST"; exit 1; }
+              export DB_REDIS_PORT=`cat /vault/secrets/db_redis_port` || { echo "Error reading REDIS_PORT"; exit 1; }
+              export DB_REDIS_PASSWORD=`cat /vault/secrets/db_redis_password` || { echo "Error reading REDIS_PASSWORD"; exit 1; }
+              
+              export RENT_SETTINGS_PIKO_SECRET_KEY=$(cat /vault/secrets/rent_settings_piko_secret_key) || { echo "Error reading RENT_SETTINGS_PIKO_SECRET_KEY"; exit 1; }
+              echo "Все переменные успешно экспортированы. Запускаем приложение..."
+              exec /app/sessionhandler;
+      imagePullSecrets:
+        - name: nexus-registry-secret
+

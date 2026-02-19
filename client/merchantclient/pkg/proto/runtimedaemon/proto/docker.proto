@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package runtime;
+
+import "container.proto";
+
+option go_package = "./";
+
+
+// Data for start container (used in change mode request)
+message DockerConfiguration {
+    string client_user_id = 1; // who will use container
+
+    ContainerConfiguration     container = 2;
+    ContainerAuthConfiguration auth      = 3;
+}
+
+message DockerState {
+    enum Status {
+        Ok        = 0;
+        Launching = 1;
+        Error     = 2;
+    }
+
+    // container.local_port is the template_port (of course if template image correctly configured)
+    // container.local_port have some transformations:
+    //    container.local_port
+    // -> container.host_port (host port in hypeOS)
+    // -> real_port (port after auth proxy (if auth enabled for this port))
+    //    real_port - container.host_port or auth.outPort (container.host_port (auth.inPort) -> auth.outPort)
+    ContainerState     container = 1;
+    ContainerAuthState auth      = 2;
+
+    Status status         = 3;
+    string status_msg     = 4; // Can be useful in error (also "Stopped") case
+}
+
+message DockerInfo {
+    bool   available = 1;
+    string version   = 2;
+}

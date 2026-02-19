@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: feedback-ingress
+  namespace: api
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    #traefik.ingress.kubernetes.io/router.middlewares: argocd-strip-prefix@kubernetescrd
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api/v1/feedback
+            pathType: Prefix
+            backend:
+              service:
+                name: feedbackservice
+                port:
+                  number: 8095
+
+#---
+#apiVersion: traefik.containo.us/v1alpha1
+#kind: Middleware
+#metadata:
+#  name: argocd-strip-prefix
+#  namespace: api
+#spec:
+#  stripPrefix:
+#    prefixes:
+#      - "/feedback"

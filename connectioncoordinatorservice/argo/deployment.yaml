@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connectioncoordinator-deployment
+  namespace: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connectioncoordinator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: connectioncoordinator
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: api-role
+        vault.hashicorp.com/agent-inject-token: 'true'
+
+        vault.hashicorp.com/agent-inject-template-BROKER_USERNAME: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-BROKER_PASSWORD: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.password }}
+          {{- end }}
+
+    spec:  # Этот блок остается, так как это описание шаблона подов
+      serviceAccountName: vault-auth
+      containers:
+        - name: connectioncoordinator
+          image: nexus.roy9.ru/repository/docker/connectioncoordinator:dev.1404e77e.v.1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8090
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Exporting environment variables from Vault secrets..."
+              export BROKER_USERNAME=$(cat /vault/secrets/broker_username) || { echo "Ошибка при чтении BROKER_USERNAME"; exit 1; }
+              export BROKER_PASSWORD=$(cat /vault/secrets/broker_password) || { echo "Ошибка при чтении BROKER_PASSWORD"; exit 1; }
+              
+              echo "All environment variables exported. Starting application..."
+              exec /app/connectioncoordinator;
+      imagePullSecrets:
+        - name: nexus-registry-secret
+

@@ -1,0 +1,418 @@
+definitions:
+  message.ClientAuthentication:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  message.ClientEnpoints:
+    properties:
+      link:
+        type: string
+      name:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  message.ClientNetwork:
+    properties:
+      piko:
+        $ref: '#/definitions/message.ClientPiko'
+      tailscale:
+        $ref: '#/definitions/message.ClientTailscale'
+    type: object
+  message.ClientPiko:
+    properties:
+      endpoints:
+        items:
+          $ref: '#/definitions/message.ClientEnpoints'
+        type: array
+    type: object
+  message.ClientSettings:
+    properties:
+      mode:
+        type: string
+      network:
+        $ref: '#/definitions/message.ClientNetwork'
+      template:
+        $ref: '#/definitions/message.ClientTemplate'
+    type: object
+  message.ClientTailscale:
+    properties:
+      auth_key:
+        type: string
+    type: object
+  message.ClientTemplate:
+    properties:
+      authentication:
+        $ref: '#/definitions/message.ClientAuthentication'
+      short_description:
+        type: string
+    type: object
+  message.MerchantAuthentication:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  message.MerchantEndpoints:
+    properties:
+      name:
+        type: string
+      template_port:
+        type: integer
+    type: object
+  message.MerchantEnv:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  message.MerchantNetwork:
+    properties:
+      piko:
+        $ref: '#/definitions/message.MerchantPiko'
+      tailscale:
+        $ref: '#/definitions/message.MerchantTailscale'
+    type: object
+  message.MerchantPiko:
+    properties:
+      auth_key:
+        type: string
+      endpoints:
+        items:
+          $ref: '#/definitions/message.MerchantEndpoints'
+        type: array
+    type: object
+  message.MerchantPorts:
+    properties:
+      auth:
+        type: boolean
+      port:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  message.MerchantSettings:
+    properties:
+      mode:
+        type: string
+      network:
+        $ref: '#/definitions/message.MerchantNetwork'
+      template:
+        $ref: '#/definitions/message.MerchantTemplate'
+    type: object
+  message.MerchantTailscale:
+    properties:
+      auth_key:
+        type: string
+    type: object
+  message.MerchantTemplate:
+    properties:
+      authentication:
+        $ref: '#/definitions/message.MerchantAuthentication'
+      description:
+        type: string
+      envs:
+        items:
+          $ref: '#/definitions/message.MerchantEnv'
+        type: array
+      id:
+        type: string
+      image_name:
+        type: string
+      image_tag:
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/message.MerchantPorts'
+        type: array
+      short_description:
+        type: string
+      title:
+        type: string
+      use_gpu:
+        type: boolean
+      version:
+        type: string
+      volumes:
+        items:
+          type: string
+        type: array
+    type: object
+  model.CPU:
+    properties:
+      available:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      total:
+        type: integer
+    type: object
+  model.Client:
+    properties:
+      created_at:
+        type: string
+      paid:
+        type: boolean
+      request_id:
+        type: string
+      session_id:
+        type: string
+      settings:
+        $ref: '#/definitions/message.ClientSettings'
+      status:
+        type: string
+      template_id:
+        type: string
+    type: object
+  model.GPU:
+    properties:
+      available_vram:
+        type: integer
+      avg_dlperf:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      total_vram:
+        type: integer
+      used_vram:
+        type: integer
+    type: object
+  model.Merchant:
+    properties:
+      client_id:
+        type: string
+      request_id:
+        type: string
+      session_id:
+        type: string
+      settings:
+        $ref: '#/definitions/message.MerchantSettings'
+      status:
+        type: string
+    type: object
+  model.PrePull:
+    properties:
+      id:
+        type: string
+      template_id:
+        type: string
+    type: object
+  model.Session:
+    properties:
+      available_ram:
+        type: integer
+      cpus:
+        items:
+          $ref: '#/definitions/model.CPU'
+        type: array
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      gpus:
+        items:
+          $ref: '#/definitions/model.GPU'
+        type: array
+      load_speed:
+        type: number
+      ping:
+        type: number
+      prepull:
+        items:
+          $ref: '#/definitions/model.PrePull'
+        type: array
+      price_internet:
+        type: number
+      price_ram:
+        type: number
+      session_id:
+        type: string
+      storages:
+        items:
+          $ref: '#/definitions/model.Storage'
+        type: array
+      total_price:
+        type: number
+      total_ram:
+        type: integer
+      upload_speed:
+        type: number
+      used_ram:
+        type: integer
+    type: object
+  model.Storage:
+    properties:
+      available:
+        type: integer
+      bandwidth:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      total:
+        type: integer
+      type:
+        type: string
+      used:
+        type: integer
+    type: object
+host: 0.0.0.0:9000
+info:
+  contact: {}
+  title: API Documentation
+  version: "1.0"
+paths:
+  /api/v1/status/rent/client:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns Rent Status of User
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Client'
+            type: array
+        "404":
+          description: user has no rent
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Status
+      tags:
+      - Status
+  /api/v1/status/rent/client/{session_id}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns Rent Status of User
+      parameters:
+      - description: Session ID
+        in: body
+        name: session_id
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Client'
+        "404":
+          description: user has no rent
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Status
+      tags:
+      - Status
+  /api/v1/status/rent/merchant/{session_id}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns Rent Statuses of User
+      parameters:
+      - description: Session ID
+        in: body
+        name: session_id
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Merchant'
+        "404":
+          description: user has no rent
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Status
+      tags:
+      - Status
+  /api/v1/status/session:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns session list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: session_id list
+          schema:
+            items:
+              type: string
+            type: array
+        "404":
+          description: user has no sessions
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Status
+      tags:
+      - Status
+  /api/v1/status/session/{session_id}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint returns session list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: merchant session
+          schema:
+            $ref: '#/definitions/model.Session'
+        "404":
+          description: user has no sessions
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Status
+      tags:
+      - Status
+swagger: "2.0"

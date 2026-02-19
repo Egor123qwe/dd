@@ -1,0 +1,15 @@
+env: "local"
+user:
+  user_path: "https://api.roy9.ru/api/v1/auth/validate"
+  uesr_method : "POST"
+  timeout : 3s
+db:
+  name: "mydatabase"
+  host: "localhost"
+  port: 35432
+  user: "myuser"
+  password: "mypassword"
+http:
+  port: 8899
+  host: "0.0.0.0"
+  timeout: 3s

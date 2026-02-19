@@ -1,0 +1,69 @@
+server:
+    http:
+        port: "8096"
+
+rent:
+    client_ttl: 5m
+    rent_ttl: 15m
+
+    settings:
+        piko:
+            token_exp: 24h
+            secret_key: "" #TODO: edit
+
+            link_template: "http://%s.localhost:8010"
+
+db:
+    stateMachine:
+        host: ""
+        port: ""
+        dbname: ""
+        user: ""
+        password: ""
+        driver: "postgres"
+
+    templates:
+        host: ""
+        port: ""
+        dbname: ""
+        user: ""
+        password: ""
+        driver: "postgres"
+
+    redis:
+        host: "localhost"
+        port: "6379"
+        password: ""
+
+broker:
+    username: ""
+    password: ""
+
+    URLs:
+        - "192.168.20.9:19092"
+
+    producer:
+        ws: "output"
+
+    consumer:
+        ws:
+            topic: "input"
+            group_id: "session_handler"
+        ttl:
+            topic: "ttl-notification"
+            group_id: "session_handler"
+
+## logger
+logger:
+    level: DEBUG
+    to_file: true
+    to_stderr: true
+    fn: "sessionHandler.log"
+    max_size_mb: 100
+    max_files: 10
+
+
+
+
+    
+

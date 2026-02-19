@@ -1,0 +1,15 @@
+env: "dev"
+user:
+  user_path: "https://api.roy9.ru/api/v1/auth/validate"
+  uesr_method : "POST"
+  timeout : 3s
+db:
+  name: "postgres"
+  host: "postgres-sm"
+  port: 5433
+  user: "postgres"
+  password: "postgres"
+http:
+  port: 8899
+  host: "0.0.0.0"
+  timeout: 3s

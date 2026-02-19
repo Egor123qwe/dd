@@ -1,0 +1,32 @@
+instance:
+    name: userservice
+
+http:
+    port: 8052
+    shutdown_time: 5m
+    read_time: 5m
+
+grpc:
+    port: 8053
+
+auth:
+    secret: "secret"
+
+logger:
+    dir: runtime/logs
+    filename: userservice.log
+    level: INFO
+    compress: true
+    duplicate_to_stdout: true
+
+user:
+    postgres:
+        url: "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"
+        migrations_dir: migration/postgres/user
+        test_seeders_dir: migration/postgres/user/test_seeders
+        run_test_seeders: false
+    token:
+        at_exp: 100m
+        rt_exp: 336h
+    registration:
+        default_role_id: 1

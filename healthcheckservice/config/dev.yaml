@@ -1,0 +1,26 @@
+env: "local"
+http:
+  port: "9000"
+  host: "0.0.0.0"
+db:
+  db_name: ""
+  db_password: ""
+  db_host: ""
+  db_port: ""
+  db_user: ""
+kafka:
+  username: ""
+  password: ""
+  brokers:
+    - "192.168.20.9:19092"
+  consumer: 
+    topic: "output"
+    consumer_group: "status-group-id"
+redis:
+  host: ""
+  port: ""
+  ttl: 3000s
+user:
+  user_path: "https://api.roy9.ru/"
+  uesr_method : "POST"
+  timeout : 3s

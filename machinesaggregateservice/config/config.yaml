@@ -1,0 +1,17 @@
+env: "dev"
+db_config:
+  db_name: ""
+  db_password: ""
+  db_host: ""
+  db_port: ""
+  db_user: ""
+http_server:
+  address: "0.0.0.0:8000"
+  timeout: 4s
+  idle_timeout: 30s
+  user: "user"
+grpc_server:
+  address: "0.0.0.0:8001"
+tracer:
+  endpoint: "jaeger-http.roy9.ru"
+  service: "machinesaggregationservice"

@@ -1,0 +1,107 @@
+name: Build and Upload on Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.parse.outputs.environment }}
+      version: ${{ steps.parse.outputs.version }}
+      infra_ref: ${{ steps.infra_ref.outputs.infra_ref }}
+
+    steps:
+      - name: Parse tag
+        id: parse
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
+            echo "ERROR: workflow must be triggered by a tag"
+            exit 1
+          fi
+
+          TAG="${GITHUB_REF_NAME}"
+
+          if [[ ! "$TAG" =~ ^(dev|prod|uat)-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "HALTING: the tag '$TAG' isn't supported by this workflow"
+            echo "Expected: (dev|prod|uat)-X.Y.Z"
+            exit 1
+          fi
+
+          echo "environment=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          echo "version=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+
+      - name: Start ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ORG_DEPLOY_KEY }}
+
+      - name: Resolve infra ref (must exist)
+        id: infra_ref
+        env:
+          ENVIRONMENT: ${{ steps.parse.outputs.environment }}
+        run: |
+          set -euo pipefail
+
+          REPO="git@github.com:Interpuls/ifc2-infrastructure.git"
+          REF="$ENVIRONMENT"
+
+          if ! git ls-remote --exit-code --heads "$REPO" "$REF" >/dev/null; then
+            echo "ERROR: branch '$REF' not found in ifc2-infrastructure"
+            exit 1
+          fi
+
+          echo "infra_ref=$REF" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve-tag
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-tag.outputs.environment }}
+
+    steps:
+      - name: Checkout Farm Service repository (tag commit)
+        uses: actions/checkout@v4
+        with:
+          path: root/src/ifc2-service-farm
+          fetch-depth: 0
+
+      - name: Start ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ORG_DEPLOY_KEY }}
+
+      - name: Checkout infrastructure repository (env branch)
+        uses: actions/checkout@v4
+        with:
+          repository: Interpuls/ifc2-infrastructure
+          ref: ${{ needs.resolve-tag.outputs.infra_ref }}
+          path: root/ifc2-infrastructure
+          ssh-key: ${{ secrets.ORG_DEPLOY_KEY }}
+          fetch-depth: 0
+
+      - name: Run build script
+        working-directory: root
+        run: |
+          set -euo pipefail
+          chmod +x ifc2-infrastructure/build/service.sh
+          ENVIRONMENT="${{ needs.resolve-tag.outputs.environment }}" \
+          ifc2-infrastructure/build/service.sh \
+            "${{ needs.resolve-tag.outputs.version }}" \
+            ifc2-service-farm \
+            .
+
+      - name: Upload artifacts to S3
+        working-directory: root
+        env:
+          MINIO_URL: ${{ secrets.MINIO_URL }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          RELEASE_CHANNEL: ${{ vars.RELEASE_CHANNEL }}
+        run: |
+          set -euo pipefail
+          chmod +x ifc2-infrastructure/build/upload_artifacts.sh
+          ifc2-infrastructure/build/upload_artifacts.sh "$RELEASE_CHANNEL"

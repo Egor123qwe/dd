@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package runtime;
+
+import "hardware.proto";
+import "network.proto";
+import "docker.proto";
+
+option go_package = "./";
+
+service Worker {
+    // Change runtime working mode
+    rpc ChangeMode(ChangeModeReq) returns (ChangeModeResp) {};
+    // Execute runtime event
+    rpc ExecuteEvent(ExecuteEventReq) returns (ExecuteEventResp) {};
+
+    // State stream request
+    rpc GetStateStream(RuntimeStateStreamReq) returns (stream RuntimeState) {};
+
+    // System information
+    rpc GetSysInfo(SystemInfoReq) returns (SystemInfo) {};
+
+    // Debug information about runtime daemon components ...
+    rpc GetInfo(InfoReq) returns (Info) {};
+}
+
+
+
+// Runtime working modes
+enum Mode {
+    Disable        = 0; // - disable                 => required []
+    Local          = 1; // - use docker              => required [container]
+    Host_P2P_VM    = 2; // - use tailscale & docker  => required [container, network (tailscale)]
+    Host_Proxy_VM  = 3; // - use piko & docker       => required [container, network (piko)]
+    Client_P2P_VM  = 4; // - use tailscale           => required [network (tailscale)]
+};
+
+message ChangeModeReq {
+    Mode  mode         = 1;
+
+    optional DockerConfiguration  docker   = 2; // required in [host, local]  modes
+    optional NetworkConfiguration network  = 3; // required in [host, client] modes
+}
+message ChangeModeResp {}
+
+
+
+// Runtime working events
+enum Event {
+    ResumeSharing          = 0;
+    StopSharing            = 1;
+};
+
+message ExecuteEventReq{
+    Event event = 1;
+}
+message ExecuteEventResp {}
+
+
+
+message RuntimeStateStreamReq {}
+message RuntimeState {
+    enum Status {
+        Ok        = 0; // Status appointed when the mode is running or in "disable" mode
+        Launching = 1; // Status of switching to another mode (including switching off)
+        Error     = 2; // Status appointed when runtime encounters an error
+    }
+
+    Status status     = 1;
+    string status_msg = 2; // Can be useful in case of "Error" status
+
+    Mode mode         = 3; // Last mode (current running or launching mode)
+
+    DockerState    container = 4;
+    NetworkState   network   = 5;
+    SystemInfo     system    = 6;
+}
+
+
+
+
+
+
+
+message InfoReq {}
+message Info {
+    NetworkInfo network = 1;
+    DockerInfo  docker  = 2;
+
+    string machine_id   = 3;
+    string version      = 4;
+}

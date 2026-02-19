@@ -1,0 +1,29 @@
+instance:
+    name: ifc2-service-farm
+
+http:
+    port: 8052
+    shutdown_time: 5m
+    read_time: 5m
+
+auth:
+    secret: "secret"
+
+logger:
+    dir: runtime/logs
+    filename: ifc2-adapter-imilk.log
+    level: INFO
+    compress: true
+    duplicate_to_stdout: true
+
+user:
+    postgres:
+        url: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+        migrations_dir: migration/postgres/user
+        test_seeders_dir: migration/postgres/user/test_seeders
+        run_test_seeders: true
+    token:
+        at_exp: 100m
+        rt_exp: 336h # 14d
+    registration:
+        default_role_id: 1

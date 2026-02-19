@@ -1,0 +1,31 @@
+version: "0.0.1"
+
+cheat_mode: false
+
+auth:
+  token: ""
+  # URL of user/auth service for login and refresh (e.g. http://localhost:8052)
+  service_url: "http://localhost:8052"
+
+state_machine:
+  connection_url: ws://localhost:8090/api/v1/ws
+
+runtimedaemon:
+  port: 30099
+
+http:
+  port: 8080
+
+# URL для HTTP-проверки активности сессии (например http://healthcheckservice:19000). Если пусто — проверка отключена.
+status_check:
+  url: "http://localhost:19000"
+
+## logger
+logger:
+  level: INFO
+  to_file: true
+  to_stderr: true
+  fn: "abc/test.log"
+  max_size_mb: 1
+  max_files: -1
+

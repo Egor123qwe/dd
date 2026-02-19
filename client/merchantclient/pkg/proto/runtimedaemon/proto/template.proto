@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package runtime;
+
+option go_package = "./";
+
+service Template {
+    rpc GetStat(StatReq) returns (StatResp) {};
+
+    // List of available containers (images that already pulled and running)
+    rpc Get(GetTemplateReq) returns (GetTemplateResp) {};
+
+    rpc Download(DownloadTemplateReq) returns (DownloadTemplateResp) {};
+    rpc DownloadStream(DownloadTemplateReq) returns (stream DownloadTemplateStreamResp) {};
+
+    rpc Remove(RemoveTemplateReq) returns (RemoveTemplateResp) {};
+    rpc CleanCache(CleanCacheReq) returns (CleanCacheResp) {};
+}
+
+message StatReq{}
+message StatResp{
+    // memory used by docker images
+
+    // по неизвестной причине (вычислено опытным путём) для того чтобы получить тоже значение
+    // что и при docker system df (там вывод в MB) нужно делить на 1000
+    float total_img_mem = 1; // [KB]
+}
+
+message GetTemplateReq {
+    // filter by available types ["local", "compute", "runtime", "base"]
+    // P.S. Вроде как пока кроме "local" ничего нет, так что ["local"] скорее всего сработает как Get All
+    repeated string types = 1;
+}
+message GetTemplateResp {
+    message TemplateInfo {
+        // Info about local usage (im mode "Local")
+        message Local_usage {
+            float mem_usage = 2;  // [KB]
+        }
+
+        // Info about rent usage (im merchant modes)
+        message Rent_usage {
+            float mem_usage = 2;  // [KB]
+        }
+
+        TemplateData template = 1;
+
+        float       image_usage = 2; // [KB]
+        Local_usage local_usage = 3;
+        Rent_usage  rent_usage  = 4;
+    }
+
+    repeated TemplateInfo templates = 1;
+}
+
+message DownloadTemplateReq{
+    message DownloadInfo {
+        string       imageName = 4;
+        string       imageTag  = 5;
+    }
+
+    TemplateData template = 1;
+    DownloadInfo download = 2;
+}
+message DownloadTemplateResp{}
+
+message DownloadTemplateStreamResp{
+    message Progress {
+        float current = 1; // [KB]
+        float total   = 2; // [KB]
+        float percent = 3; // [%]
+    }
+
+    Progress general         = 1;
+    repeated Progress layers = 2;
+
+    optional string err      = 3;
+}
+
+
+message RemoveTemplateReq{
+    string templateID = 1;
+}
+message RemoveTemplateResp{}
+
+message CleanCacheReq{
+    string templateID = 1;
+
+    // volumes that used by other users (in merchant modes)
+    bool clean_host_usage_cache = 2;
+    // volumes that used by this computer user
+    bool clean_local_usage_cache = 3;
+}
+message CleanCacheResp{}
+
+
+message TemplateData {
+    message Configuration {
+        bool useGPU = 1;
+
+        repeated TemplatePort ports   = 2;
+
+        // template volumes paths
+        repeated string       volumes = 4;
+        // strings format in envs must be: ["param", "param = value", ...]
+        repeated string       envs    = 3;
+    }
+
+    string id      = 1;
+    string type    = 2;
+    string version = 3;
+
+    // template configuration
+    Configuration configuration = 4;
+
+    string data = 5; // for debug
+}
+
+enum PortProtocol {
+    HTTP = 0;
+    TCP  = 1;
+    UDP  = 2;
+}
+
+message TemplatePort {
+    // port is port from container (used as portID)
+    string   port  = 2;
+
+    // title is name for this port usage
+    string   title = 3;
+
+    // In this version, only HTTP ports supports authentication and proxy (Host_Proxy_VM)
+    PortProtocol protocol = 4;
+
+    // auth flag is used to know if port supports authentication
+    // authentication will be used if [auth = true] in change mode request
+    // P.S. if basic user of this server, this information is not important (use state stream)
+    bool auth_available   = 5;
+}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: connectioncoordinator-service
+  namespace: api
+  labels:
+    app: connectioncoordinator
+spec:
+  selector:
+    app: connectioncoordinator
+  ports:
+    - protocol: TCP
+      port: 8090
+      targetPort: 8090
+  type: ClusterIP

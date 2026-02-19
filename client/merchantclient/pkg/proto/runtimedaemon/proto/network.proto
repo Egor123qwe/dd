@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package runtime;
+
+import "template.proto";
+
+option go_package = "./";
+
+// Data for connect (used in change mode request)
+message NetworkConfiguration {
+    // piko and tailscale are optional here, because only one of them can be used
+    // P.S. one of them is required
+    optional TailscaleConfiguration tailscale  = 1; // required in [Host_P2P_VM, Client_P2P_VM]
+    optional PikoConfiguration      piko       = 2; // required in [Host_P2P_VM_Proxy]
+}
+
+message NetworkState {
+    enum Status {
+        Ok        = 0;
+        Launching = 1;
+        Error     = 2;
+    }
+
+    message Port {
+        string title          = 1;
+        string port           = 2;
+        PortProtocol protocol = 3;
+    }
+
+    TailscaleState tailscale  = 1;
+    PikoState      piko       = 2;
+    IptablesState  iptables   = 3;
+
+    repeated Port exposed_ports = 4;
+
+    Status status     = 5;
+    string status_msg = 6;
+}
+
+message NetworkInfo {
+    TailscaleInfo tailscale = 1;
+    PikoInfo      piko      = 2;
+}
+
+
+
+
+message TailscaleConfiguration {
+    string client_id = 1;
+    string auth_key  = 2;
+}
+
+message TailscaleState {
+    enum Status {
+        Running = 0;
+        Stopped = 1;
+    }
+
+    message Ip {
+        string ipv4 = 1;
+        string ipv6 = 2;
+    }
+
+    bool            hosted = 1;
+
+    repeated Ip     ips            = 2;
+    repeated string peer_hostnames = 3;
+
+    Status status     = 4;
+    string status_msg = 5;
+}
+
+message TailscaleInfo {
+    bool   available = 1;
+    string version   = 2;
+}
+
+
+
+
+
+message PikoConfiguration {
+    message Endpoint {
+        // template_port used like template portID here
+        // to know for which port (from template) is this endpoint
+        string template_port = 1;
+
+        // endpoint name
+        string name          = 2;
+    }
+
+    repeated Endpoint endpoints = 1;
+    string            auth_key  = 2;
+}
+
+message PikoState {
+    enum Status {
+        Running = 0;
+        Stopped = 1;
+        Error   = 2;
+    }
+
+    message Endpoint {
+        // template_port used like template portID here
+        // to know for which port (from template) is this endpoint
+        string         template_port = 1;
+
+        // proxied_port is the real proxied port
+        // because template port (local container port) can be changed
+        //    template_port (local port in docker)
+        // -> host_container_port (host port in hypeOS)
+        // -> real_port (host port after auth proxy (if auth enabled))
+        // so proxied_port is real_port that piko proxied
+        string         proxied_port  = 2;
+
+        // result link for this endpoint
+        string         link          = 3;
+
+        // endpoint name, that used to this port
+        string         name          = 4;
+
+        PortProtocol   protocol      = 5;
+    }
+
+    repeated Endpoint endpoints = 1;
+
+    Status status     = 3;
+    string status_msg = 4;
+}
+
+message PikoInfo {
+    bool   available = 1;
+    string version   = 2;
+}
+
+
+
+
+message IptablesState {
+    // configured - is configured correctly
+    // (enabled when is needed, and disabled when is not needed)
+    // so it always true in correct case
+    bool configured = 1;
+}

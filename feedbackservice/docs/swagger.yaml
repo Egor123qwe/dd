@@ -1,0 +1,146 @@
+basePath: /api/v1
+definitions:
+  feedback.Feedback:
+    properties:
+      id:
+        type: integer
+      rent_id:
+        type: string
+      score:
+        type: integer
+      text:
+        type: string
+    type: object
+  feedback.FeedbackLocal:
+    properties:
+      id:
+        type: integer
+      text:
+        type: string
+      type:
+        type: string
+      user_id:
+        type: string
+    type: object
+  feedback.FeedbackPartnership:
+    properties:
+      comment:
+        type: string
+      company_name:
+        type: string
+      contact_name:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      phone_num:
+        type: string
+      user_id:
+        type: string
+    type: object
+  response.HTTPError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is an API for feedback service
+  title: Swagger Feedback Service Api
+  version: "1.0"
+paths:
+  /request/local:
+    post:
+      consumes:
+      - application/json
+      description: Create feeedback for local.
+      parameters:
+      - description: feedback creating params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/feedback.FeedbackLocal'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success create feedback
+          schema:
+            type: integer
+        "400":
+          description: Wrong body
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+        "500":
+          description: Somethink went wrong
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+      summary: Create feedback for local endpoint
+  /request/partnership:
+    post:
+      consumes:
+      - application/json
+      description: Create feeedback for partnership.
+      parameters:
+      - description: feedback creating params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/feedback.FeedbackPartnership'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success create feedback
+          schema:
+            type: integer
+        "400":
+          description: Wrong body
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+        "500":
+          description: Somethink went wrong
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+      summary: Create feedback for partnership endpoint
+  /score/rental:
+    post:
+      consumes:
+      - application/json
+      description: Create feeedback for rental.
+      parameters:
+      - description: feedback creating params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/feedback.Feedback'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success create feedback
+          schema:
+            type: integer
+        "400":
+          description: Wrong body
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+        "500":
+          description: Somethink went wrong
+          schema:
+            $ref: '#/definitions/response.HTTPError'
+      summary: Create feedback for rental endpoint
+security:
+- Bearer: []
+securityDefinitions:
+  Bearer:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,13 @@
+services:
+  piko-server:
+    image: ghcr.io/andydunstall/piko:latest
+    container_name: piko-server
+    ports:
+      - "8001:8001"  # upstream port
+      - "8000:8000"  # proxy port
+    command:
+      - "server"
+      - "--upstream.bind-addr=0.0.0.0:8001"
+      - "--proxy.bind-addr=0.0.0.0:8000"
+      - "--log.level=info"
+    restart: unless-stopped

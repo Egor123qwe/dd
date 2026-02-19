@@ -1,0 +1,11 @@
+[Unit]
+Description=ROY9 Runtime Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=roy9
+ExecStart=/bin/bash -c 'cd /opt/runtimedaemon && sudo ./runtimedaemon'
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expirationnotification-deployment
+  namespace: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: expirationnotification
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: expirationnotification
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: api-role
+        vault.hashicorp.com/agent-inject-token: 'true'
+        vault.hashicorp.com/agent-inject-template-KAFKA_USERNAME: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-KAFKA_PASSWORD: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.password }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-KAFKA_PORT: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-KAFKA_HOST: |
+          {{- with secret "secret/data/kafka" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-REDIS_HOST: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-REDIS_PORT: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-REDIS_PASSWORD: |
+          {{- with secret "secret/data/redis" -}}
+          {{ .Data.password }}
+          {{- end }}
+    spec:  # Этот блок остается, так как это описание шаблона подов
+      serviceAccountName: vault-auth
+      containers:
+        - name: expirationnotification
+          image: nexus.roy9.ru/repository/docker/expirationnotification:{{DOCKER_IMAGE_TAG}}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8092
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Exporting environment variables from Vault secrets..."
+              export KAFKA_USERNAME=`cat /vault/secrets/kafka_username` || { echo "Error reading KAFKA_USERNAME"; exit 1; }
+              export KAFKA_PASSWORD=`cat /vault/secrets/kafka_password` || { echo "Error reading KAFKA_PASSWORD"; exit 1; }
+              export KAFKA_PORT=`cat /vault/secrets/kafka_port` || { echo "Error reading KAFKA_PORT"; exit 1; }
+              export KAFKA_HOST=`cat /vault/secrets/kafka_host` || { echo "Error reading KAFKA_HOST"; exit 1; }
+              export REDIS_HOST=`cat /vault/secrets/redis_host` || { echo "Error reading REDIS_HOST"; exit 1; }
+              export REDIS_PORT=`cat /vault/secrets/redis_port` || { echo "Error reading REDIS_PORT"; exit 1; }
+              export REDIS_PASSWORD=`cat /vault/secrets/redis_password` || { echo "Error reading REDIS_PASSWORD"; exit 1; }
+
+              echo "All environment variables exported. Starting application..."
+              exec /app/expirationnotification;
+      imagePullSecrets:
+        - name: nexus-registry-secret
+

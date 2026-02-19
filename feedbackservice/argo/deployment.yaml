@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feedbackservice-deployment
+  namespace: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: feedbackservice
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: feedbackservice
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: api-role
+        vault.hashicorp.com/agent-inject-token: 'true'
+
+        vault.hashicorp.com/agent-inject-template-DATABASE_HOST: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.host }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DATABASE_PORT: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.port }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DATABASE_NAME: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.db }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DATABASE_USER: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.user }}
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-DATABASE_PASSWORD: |
+          {{- with secret "secret/data/postgres" -}}
+          {{ .Data.password }}
+          {{- end }}
+
+    spec:  # Этот блок остается, так как это описание шаблона подов
+      serviceAccountName: vault-auth
+      containers:
+        - name: feedbackservice
+          image: nexus.roy9.ru/repository/docker/feedbackservice:dev.ebbb9050.v.1.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8095
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Exporting environment variables from Vault secrets..."
+              export DATABASE_HOST=`cat /vault/secrets/database_host` || { echo "Error reading DATABASE_HOST"; exit 1; }
+              export DATABASE_PORT=`cat /vault/secrets/database_port` || { echo "Error reading DATABASE_PORT"; exit 1; }
+              export DATABASE_NAME=`cat /vault/secrets/database_name` || { echo "Error reading DATABASE_NAME"; exit 1; }
+              export DATABASE_USER=`cat /vault/secrets/database_user` || { echo "Error reading DATABASE_USER"; exit 1; }
+              export DATABASE_PASSWORD=`cat /vault/secrets/database_password` || { echo "Error reading DATABASE_PASSWORD"; exit 1; }
+
+              echo "All environment variables exported. Starting application..."
+              exec /app/feedback;
+      imagePullSecrets:
+        - name: nexus-registry-secret

@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:latest
+    container_name:  test-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+    ports:
+      - "15432:5432"
+  
+  go-service:
+    container_name: aggregation-service
+    build:
+      context: .
+    depends_on:
+      - db
+    ports:
+    - "8004:8000"
+    environment:
+      - CONFIG_PATH=/root/config/config.yaml
+
+  goose:
+    image: ghcr.io/kukymbr/goose-docker:3.19.2
+    depends_on:
+      - db
+      - go-service
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      - GOOSE_DRIVER=postgres
+      - GOOSE_DBSTRING=postgres://user:password@db:5432/dbname?sslmode=disable
+volumes:
+  postgres-data:

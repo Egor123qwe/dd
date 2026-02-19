@@ -1,0 +1,11 @@
+grpc:
+  host: "0.0.0.0"
+  port: 9090
+  timeout: 10
+s3:
+  host: "0.0.0.0"
+  port: "9000"
+  user: "miniouser"
+  password: "ohMyMinio"
+  # size of bucket in Gb
+  default_quota: 25

@@ -1,0 +1,12 @@
+[Unit]
+Description=ROY9 Merchantclient Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=roy9
+Environment=MERCHANT_TOKEN=<default_token_if_needed>
+ExecStart=/bin/bash -c 'cd /opt/merchantclient && ./merchantclient --token=${MERCHANT_TOKEN}'
+
+[Install]
+WantedBy=multi-user.target

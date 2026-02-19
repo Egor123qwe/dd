@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package bucket;
+
+option go_package = "bucket.v1;bucketv1";
+
+service Bucket {
+  rpc Create(BucketRequest) returns (BucketResponse);
+  rpc ChangeQuota(ChangeQuotaRequest) returns (ChangeQuotaResponse);
+}
+
+message BucketRequest{
+  string user_id = 1;
+};
+
+message BucketResponse{
+  string user_id = 1;
+  string bucket_id = 2;
+};
+
+message ChangeQuotaRequest{}
+
+message ChangeQuotaResponse{}

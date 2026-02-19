@@ -1,0 +1,94 @@
+stages:
+  - cleaning
+  - build
+  - run
+  - push
+
+variables:
+  CONTAINER_NAME: machines-aggregation
+  CONTAINER_IMAGE: nexus.roy9.ru/repository/docker/machines-aggregation
+  BRANCH: $CI_COMMIT_BRANCH
+  VAULT_ADDR: "http://192.168.20.13:8200"
+  VAULT_ROLE_ID: "2625a716-5377-e616-f680-2b192917132f"
+  VAULT_SECRET_ID: "38309c1b-5b8e-d2e9-aa52-9e3df08b2c03"
+
+cleaning_img:
+  stage: cleaning
+  script:
+    - docker images | grep $CONTAINER_NAME | awk '{print $3}' | xargs docker rmi -f || true
+    - docker ps -a --format "{{.Names}}" | grep machines-aggregation | xargs docker rm -f || true
+  tags:
+    - Docker
+
+build_img:
+  stage: build
+  variables:
+    DOCKER_IMAGE_TAG: ""
+  before_script:
+    #- echo "Logging into Nexus with user - $CI_REGISTRY_USER"
+    - export BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | sed 's/\//_/g')
+    - export DOCKER_IMAGE_TAG=$BRANCH_NAME
+    - echo $CI_REGISTRY_PASSWORD | docker login nexus.roy9.ru -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - docker build --no-cache -t $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG.$CI_COMMIT_SHORT_SHA .
+  tags:
+    - Docker
+
+run_img:
+  stage: run
+  variables:
+    DOCKER_IMAGE_TAG: ""
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: http://192.168.20.13:8200
+  before_script:
+    - export BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | sed 's/\//_/g')
+    - export DOCKER_IMAGE_TAG=$BRANCH_NAME
+    # data from vault
+    - echo "Authenticating with Vault using OIDC ID Token"
+    - export VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="gitlab-role" jwt="$VAULT_ID_TOKEN" vault_addr=http://192.168.20.13:8200)
+
+    - export KAFKA_USERNAME=$(vault kv get -field=user secret/data/kafka)
+    - export KAFKA_PASSWORD=$(vault kv get -field=password secret/data/kafka)
+    - export KAFKA_PORT=$(vault kv get -field=port secret/data/kafka)
+    - export KAFKA_HOST=$(vault kv get -field=host secret/data/kafka)
+
+    - export DATABASE_HOST=$(vault kv get -field=host secret/data/postgres)
+    - export DATABASE_PORT=$(vault kv get -field=port secret/data/postgres)
+    - export DATABASE_NAME=$(vault kv get -field=db secret/data/postgres)
+    - export DATABASE_USER=$(vault kv get -field=user secret/data/postgres)
+    - export DATABASE_PASSWORD=$(vault kv get -field=password secret/data/postgres)
+
+    - export REDIS_HOST=$(vault kv get -field=host secret/data/redis)
+    - export REDIS_PORT=$(vault kv get -field=port secret/data/redis)
+    - export REDIS_PASSWORD=$(vault kv get -field=password secret/data/redis)
+  script:
+    - docker run -itd --restart always --name=machines-aggregation -p 8004:8000
+      -e DATABASE_HOST=$DATABASE_HOST
+      -e DATABASE_PORT=$DATABASE_PORT
+      -e DATABASE_NAME=$DATABASE_NAME
+      -e DATABASE_USER=$DATABASE_USER
+      -e DATABASE_PASSWORD=$DATABASE_PASSWORD
+      -e KAFKA_HOST=$KAFKA_HOST
+      -e KAFKA_PORT=$KAFKA_PORT
+      -e KAFKA_USERNAME=$KAFKA_USERNAME
+      -e KAFKA_PASSWORD=$KAFKA_PASSWORD
+      -e REDIS_HOST=$REDIS_HOST
+      -e REDIS_PORT=$REDIS_PORT
+      -e REDIS_PASSWORD=$REDIS_PASSWORD
+      $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG.$CI_COMMIT_SHORT_SHA
+    - docker ps
+  tags:
+    - Docker
+
+push_img:
+  stage: push
+  script:
+    - echo $CI_REGISTRY_PASSWORD | docker login nexus.roy9.ru -u $CI_REGISTRY_USER --password-stdin
+    - export BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | sed 's/\//_/g')
+    - export DOCKER_IMAGE_TAG=$BRANCH_NAME
+    - docker tag $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG.$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG
+    - docker push $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG.$CI_COMMIT_SHORT_SHA
+    - docker push $CONTAINER_IMAGE:$DOCKER_IMAGE_TAG
+  tags:
+    - Docker

@@ -1,0 +1,3 @@
+# ConnectionCoordinatorService
+
+### smth about this service ...

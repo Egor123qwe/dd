@@ -1,0 +1,19 @@
+Kafka:
+  Brokers:
+    - "192.168.20.9:19092"
+  Username: ""
+  Password: ""
+  Producer:
+    Topic: "ttl-notification"
+  Consumer: 
+    Topic: "keepalive"
+    Group: "group_id"
+
+Redis:
+  Host: ""
+  Port: ""
+  Password: ""
+  # ttl in minutes
+  TTL: 5
+  DBNumbers:
+    - 0

@@ -1,0 +1,52 @@
+version: "0.0.1"
+
+## grpc
+grpc_port: 30099
+
+docker:
+  stopped_container_ttl: 30m
+
+  registry_name: ""
+  username: ""
+  password: ""
+
+  sharedFolder:
+    storageAPI: "http://s1.roy9.ru:9000"
+    rclonePath: "./rclone/rclone" # also put here your rclone
+
+network:
+  tailscale:
+    login_server: "https://controlplane.tailscale.com"
+
+  piko:
+    version: "0.6.0"
+    server_url: "http://localhost:8001"  # Для продакшена: "http://YOUR_IP:8001"
+    link_template: "http://%s.localhost:8000"  # Для продакшена: "http://%s.YOUR_IP:8000" (например: "http://%s.192.168.1.100:8000")
+
+  iptables:
+    - table: "filter"
+      user_chains: # for example
+        - "hype"
+      rules:
+        - "-P INPUT ACCEPT"
+        - "-P OUTPUT ACCEPT"
+        - "-P FORWARD ACCEPT"
+        - "-A FORWARD -j ACCEPT"
+
+    - table: "nat"
+      rules:
+        - "-A POSTROUTING -j MASQUERADE"
+
+events:
+  stop_sharing_timeout: 5m
+
+logger:
+  level: DEBUG
+  to_stderr: true
+  to_file: true
+  fn: "runtimedaemon.log"
+  max_size_mb: 100
+  max_files: 10
+  to_sentry: false
+  sentry_dsn: "https://c1b6f5c308784160aef5f74a7f63f0cd@sentry.obs.mts.ru/1407"
+

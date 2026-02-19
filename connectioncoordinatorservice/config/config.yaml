@@ -1,0 +1,36 @@
+http:
+    host: "0.0.0.0"
+    port: "8090"
+    shutdown_time: "15"
+    read_time: "15"
+
+# URL of service that validates JWT (GET /api/v1/machine/token/validate). Use userservice for login-based auth.
+api:
+    URL: "http://localhost:8052"
+
+broker:
+    username: "admin"
+    password: "admin"
+
+    URLs:
+        - "localhost:19092"
+
+    producer:
+        input: "input"
+        keepalive: "keepalive"
+
+    consumer:
+        topic: "output"
+        group_id: "connectioncoordinator"
+
+## logger
+logger:
+    level: DEBUG
+    to_file: true
+    to_stderr: true
+    fn: "coordinator.log"
+    max_size_mb: 100
+    max_files: 10
+
+
+

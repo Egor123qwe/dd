@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package runtime;
+
+option go_package = "./";
+
+message SystemInfoReq {}
+message SystemInfo {
+    GPU     gpu      = 2;
+    RAM     ram      = 3;
+    Storage storage  = 4;
+    CPU     cpu      = 5;
+    Network network  = 6;
+}
+
+
+message RAM {
+    float total_mem = 1; // [KB]
+    float used_mem  = 2; // [KB]
+    float free_mem  = 3; // [KB]
+}
+
+message CPU {
+    string name  = 1;
+    uint32 cores_count = 2;
+}
+
+message Network {
+    float ping     = 1; // [Milliseconds]
+    float download = 2; // [KBps]
+    float upload   = 3; // [KBps]
+}
+
+message Storage {
+    enum DiskType {
+        UNKNOWN = 0;
+        HDD     = 1;
+        FDD     = 2;
+        ODD     = 3;
+        SSD     = 4;
+        VIRTUAL = 5;
+    }
+
+    // machine can have different types of disks
+    // but this data does not provide what type has what amount of memory
+    repeated DiskType types = 1;
+    float total_mem        = 2; // [KB]
+    float used_mem         = 3; // [KB]
+    float free_mem         = 4; // [KB]
+}
+
+message GPU {
+    message Card {
+        message VMem {
+            float total = 1; // [KB]
+            float used  = 2; // [KB]
+            float free  = 3; // [KB]
+        }
+
+        string name            = 1;
+        bool   is_nvidia       = 2;
+
+        // Video memory provided only if card is nvidia and drivers installed
+        // (is_nvidia = true & nvidia_driver.installed = true)
+        optional VMem mem  = 3;
+    }
+
+    message NvidiaDriver {
+        bool installed = 1;
+        string version = 2;
+    }
+
+    NvidiaDriver nvidia_driver = 1;
+    repeated Card cards        = 2;
+}

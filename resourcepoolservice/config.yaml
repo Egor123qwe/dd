@@ -1,0 +1,33 @@
+Server:
+  Port: "8091"
+
+PriceService:
+  Host: "price-service.api.svc.cluster.local"
+  Port: "33032"
+
+Kafka:
+  Brokers:
+    - "192.168.20.9:19092"
+  Username: ""
+  Password: ""
+  Consumer:
+    Topics:
+      Input: "input"
+      TTLNotification: "ttl-notification"
+    ConsumerGroup: "resource-pool-consumers"
+  Producer:
+    Topic: "output"
+
+Database:
+  Host: ""
+  Port: ""
+  User: ""
+  Password: ""
+  Name: ""
+
+Redis:
+  Host: ""
+  Port: ""
+  Password: ""
+  DB: "0"
+  TTL: 5
