@@ -1,0 +1,1039 @@
+.wrap {
+  width: 100%;
+}
+
+/* Вводный текст страницы (без дублирования заголовка из навбара) */
+.pageIntro {
+  margin: 0 0 1.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(125, 207, 255, 0.06);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 52em;
+}
+
+.section {
+  margin-bottom: 2rem;
+  padding: 1.5rem 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sectionHint {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.modalHint {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.templateExplain {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.25rem;
+  background: rgba(125, 207, 255, 0.08);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+}
+
+.templateExplainText {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.hint {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 1.25rem 1rem;
+  }
+  .section h3 {
+    margin-bottom: 1rem;
+  }
+  .activeRentMeta {
+    grid-template-columns: 1fr;
+    padding: 1rem 1.25rem;
+  }
+  .activeRentBlocks {
+    padding: 0 1.25rem 1rem;
+  }
+  .merchantCardTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .merchantCard .primaryBtn {
+    width: 100%;
+  }
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+}
+
+.errorBlock {
+  padding: 0.5rem 0.75rem;
+  background: rgba(243, 139, 168, 0.15);
+  color: var(--danger);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.card {
+  padding: 1.25rem 1.5rem;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Блок активной аренды */
+.activeRentCard {
+  padding: 0;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Пустое состояние «Мои узлы» — как стать поставщиком */
+.nodesEmpty {
+  margin-top: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  background: rgba(166, 227, 161, 0.06);
+  border: 1px solid rgba(166, 227, 161, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 42rem;
+}
+
+.nodesEmptyText {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.nodesEmptyBtn {
+  align-self: flex-start;
+}
+
+/* Список узлов на странице поставщика */
+.nodeList {
+  margin-top: 0.75rem;
+}
+
+.nodeListError {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(220, 80, 80, 0.1);
+  border: 1px solid rgba(220, 80, 80, 0.3);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.nodeListUl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.nodeListItem {
+  border-bottom: 1px solid var(--border);
+}
+
+.nodeListItem:last-child {
+  border-bottom: none;
+}
+
+.nodeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  min-height: 3rem;
+}
+
+.nodeRowLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.nodeName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.nodeStatus {
+  flex-shrink: 0;
+}
+
+.nodeRowRight {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.nodeRowRight .secondaryBtn,
+.nodeRowRight .dangerBtn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.nodeRowRight .dangerBtn {
+  margin-top: -0px;
+}
+
+.nodeExpand {
+  padding: 1rem 0 1rem 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: -1px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nodeExpandTitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nodeSpecs {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem 1.5rem;
+}
+
+.nodeSpecRow {
+  display: grid;
+  grid-template-columns: 10em 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.nodeSpecRow dt {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.nodeSpecRow dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.nodeSpecSubList {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.nodeSpecSubList li {
+  margin: 0.15rem 0;
+}
+
+.activeRentHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.statusPending {
+  background: rgba(125, 207, 255, 0.2);
+  color: var(--accent);
+}
+
+.statusRunning {
+  background: rgba(166, 227, 161, 0.2);
+  color: var(--success);
+}
+
+.activeRentMeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metaLabel {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metaValue {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.activeRentBlocks {
+  padding: 0 1.5rem 1.25rem;
+}
+
+.toggleBlock {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggleBlock:hover {
+  color: var(--text);
+}
+
+.toggleBlock:first-of-type {
+  margin-top: 1rem;
+}
+
+.activeRentBlockContent {
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.activeRentBlockContent .cardRow {
+  margin: 0.5rem 0;
+}
+
+.activeRentBlockContent .cardRow:first-child {
+  margin-top: 0;
+}
+
+.activeRentActions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.cardRow {
+  margin: 0.6rem 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cardRow .label {
+  min-width: 8rem;
+  flex-shrink: 0;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.settings {
+  margin-top: 1rem;
+  padding: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.primaryBtn {
+  padding: 0.6rem 1.25rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dangerBtn {
+  padding: 0.6rem 1.25rem;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+.dangerBtn:hover {
+  opacity: 0.9;
+}
+
+.secondaryBtn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.stopConfirm {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.stopConfirm label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.input {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.buttons {
+  margin-top: 0.75rem;
+}
+
+.noActive p {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+/* График истории аренд по дням */
+.historyChartWrap {
+  margin-top: 1rem;
+}
+
+.historyChartControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.historyChartLabel {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.historyRangeButtons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.historyRangeButtons .primaryBtn,
+.historyRangeButtons .secondaryBtn {
+  margin-top: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.historyNavButtons {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.historyNavButtons .secondaryBtn {
+  margin-left: 0;
+}
+
+.historyChartContainer {
+  min-height: 280px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+
+.historyDayDetail {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.historyDayDetailTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.historyDayDetailStats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.historyDayDetailStats strong {
+  color: var(--text);
+  margin-left: 0.25rem;
+}
+
+.historyDayDetailListTitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.historyDayDetailTableWrap {
+  width: 100%;
+}
+
+.historyDayDetailListHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+  padding: 0.4rem 0 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.historyDayDetailListHeader span {
+  text-align: center;
+  padding: 0 0.75rem;
+  border-right: 1px solid var(--border);
+}
+
+.historyDayDetailListHeader span:last-child {
+  border-right: none;
+}
+
+.historyDayDetailList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historyDayDetailItem {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.historyDayDetailItem:last-child {
+  border-bottom: none;
+}
+
+.historyDayDetailItem > span {
+  text-align: center;
+  padding: 0 0.75rem;
+  border-right: 1px solid var(--border);
+}
+
+.historyDayDetailItem > span:last-child {
+  border-right: none;
+}
+
+.historyDayDetailTime {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.historyDayDetailCost {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.historyDayDetailItem .muted {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .historyChartControls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .historyNavButtons {
+    margin-left: 0;
+  }
+  .historyDayDetailItem {
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem;
+  }
+  .historyDayDetailItem span:first-child {
+    grid-column: 1;
+  }
+  .historyDayDetailItem span:nth-child(2) {
+    grid-column: 1;
+  }
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Модальное окно выбора поставщика */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 520px;
+  width: 100%;
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  color: var(--text);
+}
+
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modalHeaderActions .secondaryBtn {
+  margin: 0;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+.templateCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.templateCard:hover {
+  border-color: var(--accent-dim);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.templateCardSelected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(125, 207, 255, 0.15);
+}
+
+.templateCardRadio {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  margin: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.templateCardImage {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.templateCardImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.templateCardContent {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.templateCardTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.templateCardDescription {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.templatePreviewCard {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.templateNameLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.templateNameLink:hover {
+  color: var(--accent-dim);
+}
+
+@media (max-width: 768px) {
+  .templateGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .templateCardImage {
+    height: 140px;
+  }
+}
+
+.modalClose:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modalBody {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.merchantList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.merchantCard {
+  padding: 1.25rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.merchantCard:hover {
+  border-color: rgba(125, 207, 255, 0.35);
+}
+
+.merchantCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.merchantCardInfo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.merchantName {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.merchantPriceLine {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.merchantPriceLabel {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.merchantPrice {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.merchantCard .primaryBtn {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.merchantCard .toggleBlock {
+  margin-top: 0.75rem;
+}
+
+.merchantId {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.merchantDetails {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+}
+
+/* Блок характеристик: сетка «подпись — значение» */
+.merchantDetails,
+.hardwareSpec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 11em 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+
+.detailRow:last-of-type {
+  border-bottom: none;
+}
+
+.detailRow strong {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.detailBlock {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.detailBlock strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.detailBlock ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detailBlock li {
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 6px 6px 0;
+}
+
+.detailBlock li:last-child {
+  margin-bottom: 0;
+}

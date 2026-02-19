@@ -1,0 +1,697 @@
+.wrap {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 1.25rem 2.5rem;
+  box-sizing: border-box;
+}
+
+.intro {
+  margin: 0 0 2rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(125, 207, 255, 0.08) 0%, rgba(125, 207, 255, 0.02) 100%);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  max-width: 54em;
+  letter-spacing: 0.01em;
+}
+
+/* Пустое состояние «Мои узлы» */
+.nodesEmptyText {
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.nodesEmptySteps {
+  margin: 0 0 1.5rem;
+  padding-left: 1.5rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.nodesEmptySteps li {
+  margin-bottom: 0.6rem;
+}
+
+.nodesEmptySteps li:last-child {
+  margin-bottom: 0;
+}
+
+.section {
+  margin-bottom: 2.25rem;
+  padding: 1.75rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.sectionHint {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.error {
+  color: var(--danger, #e57373);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Список узлов — карточки в том же стиле, что и активная аренда у покупателя */
+.sessionList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sessionListItem {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Карточка как у покупателя (activeRentCard) */
+.activeRentCard {
+  padding: 0;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.sessionCardReserved {
+  /* без отдельного оформления — как обычная карточка */
+}
+
+.activeRentHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border);
+}
+
+.sessionNodeName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sessionPrice {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.sessionStatusPending {
+  background: rgba(125, 207, 255, 0.2);
+  color: var(--accent);
+}
+
+.sessionStatusRunning {
+  background: rgba(166, 227, 161, 0.2);
+  color: var(--success);
+}
+
+.sessionStatusNeutral {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+}
+
+.activeRentMeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metaLabel {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metaValue {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.activeRentBlocks {
+  padding: 1.25rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.toggleBlock {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggleBlock:hover {
+  color: var(--text);
+}
+
+.toggleBlock:first-of-type {
+  margin-top: 1rem;
+}
+
+
+.activeRentBlockContent {
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.activeRentActions {
+  margin-top: 0;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.activeRentCard .toggleBlock:first-of-type {
+  margin-top: 0;
+}
+
+/* Детали в раскрываемом блоке (как в карточке покупателя) */
+.activeRentBlockContent .detailRow {
+  display: grid;
+  grid-template-columns: 11em 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+
+.activeRentBlockContent .detailRow:last-of-type {
+  border-bottom: none;
+}
+
+.activeRentBlockContent .detailRow strong {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.activeRentBlockContent .detailBlock {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.activeRentBlockContent .detailBlock strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.activeRentBlockContent .detailBlock ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activeRentBlockContent .detailBlock li {
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 6px 6px 0;
+}
+
+.activeRentBlockContent .detailBlock li:last-child {
+  margin-bottom: 0;
+}
+
+.detailBtn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.detailBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.detailBtn[aria-expanded="true"] {
+  background: rgba(125, 207, 255, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stopBtn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--danger, #c62828);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.stopBtn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.stopBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.stopBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.downloadBtn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(125, 207, 255, 0.3);
+}
+
+.downloadBtn:hover {
+  opacity: 0.95;
+}
+
+.downloadBtn:active {
+  transform: scale(0.98);
+}
+
+/* График и история */
+.historyChartWrap {
+  margin-top: 1.25rem;
+}
+
+.historyChartControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.historyChartLabel {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.historyRangeButtons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.historyRangeButtons .primaryBtn,
+.historyRangeButtons .secondaryBtn {
+  margin-top: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.historyNavButtons {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.primaryBtn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.secondaryBtn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.secondaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.historyChartContainer {
+  min-height: 280px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+/* Детали дня */
+.historyDayDetail {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.historyDayDetailTitle {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+}
+
+.historyDayDetailStats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.historyDayDetailStats strong {
+  color: var(--text);
+  margin-left: 0.25rem;
+}
+
+.historyDayDetailListTitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.historyDayDetailTableWrap {
+  width: 100%;
+}
+
+.historyDayDetailListHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+  padding: 0.4rem 0 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.historyDayDetailListHeader span {
+  text-align: center;
+  padding: 0 0.75rem;
+  border-right: 1px solid var(--border);
+}
+
+.historyDayDetailListHeader span:last-child {
+  border-right: none;
+}
+
+.historyDayDetailList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historyDayDetailItem {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.historyDayDetailItem:last-child {
+  border-bottom: none;
+}
+
+.historyDayDetailItem > span {
+  text-align: center;
+  padding: 0 0.75rem;
+  border-right: 1px solid var(--border);
+}
+
+.historyDayDetailItem > span:last-child {
+  border-right: none;
+}
+
+.historyDayDetailTime {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.historyDayDetailCost {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Таблица истории */
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.table td.muted {
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Модалка «Подробнее» */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  color: var(--text);
+}
+
+.modalBody {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.merchantDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 11em 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+
+.detailRow:last-of-type {
+  border-bottom: none;
+}
+
+.detailRow strong {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.detailBlock {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.detailBlock strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.detailBlock ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    padding: 0 1rem 1.5rem;
+  }
+
+  .section {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .activeRentMeta {
+    grid-template-columns: 1fr;
+    padding: 1rem 1.25rem;
+  }
+
+  .activeRentActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .historyChartControls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .historyNavButtons {
+    margin-left: 0;
+  }
+
+  .historyDayDetailItem {
+    grid-template-columns: 1fr 1fr;
+  }
+}

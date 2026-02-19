@@ -1,0 +1,467 @@
+# Общий docker-compose для всех сервисов облака + Red Panda (Kafka-совместимый брокер)
+# Запуск: docker compose up -d
+# Топики: input, output, ttl-notification, keepalive
+
+networks:
+  cloud_network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redpanda_data:
+  redis_data:
+  minio_data:
+
+services:
+  # --- Red Panda (Kafka-совместимый брокер) ---
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.1
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+      - --smp 1
+      - --default-log-level=info
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    networks:
+      - cloud_network
+    ports:
+      - "19092:19092"
+      - "18081:18081"
+      - "18082:18082"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  # Создание топиков Kafka после старта Red Panda
+  redpanda-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.1
+    container_name: redpanda-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Red Panda..."
+        sleep 15
+        rpk topic create input output ttl-notification keepalive -X brokers=redpanda:9092 || true
+        echo "Topics ready."
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    networks:
+      - cloud_network
+
+  # Веб-UI для Redpanda (топики, потребители, сообщения)
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v3.5.1
+    container_name: redpanda-console
+    environment:
+      KAFKA_BROKERS: "redpanda:9092"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    networks:
+      - cloud_network
+    ports:
+      - "18080:8080"
+
+  # --- Инфраструктура ---
+  postgres:
+    image: postgres:16-alpine3.19
+    container_name: cloud-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - cloud_network
+    ports:
+      - "9009:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2.4-alpine
+    container_name: cloud-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - cloud_network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: cloud-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: miniouser
+      MINIO_ROOT_PASSWORD: ohMyMinio
+    command: server --console-address ":9001" /data
+    networks:
+      - cloud_network
+
+  piko-server:
+    image: ghcr.io/andydunstall/piko:latest
+    container_name: piko-server
+    ports:
+      - "8011:8001"  # upstream port (host 8011 to avoid conflict with machines-aggregate)
+      - "8010:8000"  # proxy port
+    command:
+      - "server"
+      - "--upstream.bind-addr=0.0.0.0:8001"
+      - "--proxy.bind-addr=0.0.0.0:8000"
+      - "--log.level=info"
+    restart: unless-stopped
+    networks:
+      - cloud_network
+
+  # --- Миграции (порядок важен: sessionhandler создаёт session → resourcepool правит session → feedback → history) ---
+  migrate-sessionhandler:
+    image: ghcr.io/kukymbr/goose-docker:3.26.0
+    container_name: migrate-sessionhandler
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+      GOOSE_EXTRA_ARGS: "-table=goose_sessionhandler_version -allow-missing"
+    volumes:
+      - ./sessionhandlerservice/migration:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cloud_network
+    restart: "no"
+
+  migrate-resourcepool:
+    image: ghcr.io/kukymbr/goose-docker:3.26.0
+    container_name: migrate-resourcepool
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+      GOOSE_EXTRA_ARGS: "-table=goose_resourcepool_version -allow-missing"
+    volumes:
+      - ./resourcepoolservice/migration:/migrations
+    depends_on:
+      migrate-sessionhandler:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    restart: "no"
+
+  migrate-feedback:
+    image: ghcr.io/kukymbr/goose-docker:3.26.0
+    container_name: migrate-feedback
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+      GOOSE_EXTRA_ARGS: "-table=goose_feedback_version -allow-missing"
+    volumes:
+      - ./feedbackservice/migration:/migrations
+    depends_on:
+      migrate-resourcepool:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    restart: "no"
+
+  migrate-history:
+    image: ghcr.io/kukymbr/goose-docker:3.26.0
+    container_name: migrate-history
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+      GOOSE_EXTRA_ARGS: "-table=goose_history_version -allow-missing"
+    volumes:
+      - ./historyservice/migrations:/migrations
+    depends_on:
+      migrate-feedback:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    restart: "no"
+
+  # --- Сервисы приложения ---
+
+  connectioncoordinatorservice:
+    build:
+      context: ./connectioncoordinatorservice
+      dockerfile: Dockerfile
+    container_name: connection-coordinator
+    working_dir: /app
+    environment:
+      BROKER_URLS: "redpanda:9092"
+      BROKER_USERNAME: ""
+      BROKER_PASSWORD: ""
+      # URL of user service for validating merchant JWT (Client-Authorization)
+      API_URL: "http://userservice:8052"
+    depends_on:
+      userservice:
+        condition: service_started
+      redpanda-init:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8090:8090"
+
+  sessionhandlerservice:
+    build:
+      context: ./sessionhandlerservice
+      dockerfile: Dockerfile
+    container_name: session-handler
+    environment:
+      BROKER_URLS: "redpanda:9092"
+      BROKER_USERNAME: ""
+      BROKER_PASSWORD: ""
+      DB_STATEMACHINE_HOST: postgres
+      DB_STATEMACHINE_PORT: "5432"
+      DB_STATEMACHINE_DBNAME: postgres
+      DB_STATEMACHINE_USER: postgres
+      DB_STATEMACHINE_PASSWORD: postgres
+      DB_TEMPLATES_HOST: postgres
+      DB_TEMPLATES_PORT: "5432"
+      DB_TEMPLATES_DBNAME: postgres
+      DB_TEMPLATES_USER: postgres
+      DB_TEMPLATES_PASSWORD: postgres
+      DB_REDIS_HOST: redis
+      DB_REDIS_PORT: "6379"
+      SERVER_HTTP_PORT: "8096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8094:8094"
+      - "8096:8096"
+
+  resourcepoolservice:
+    build:
+      context: ./resourcepoolservice
+      dockerfile: Dockerfile
+    container_name: resource-pool
+    environment:
+      KAFKA_BROKERS: "redpanda:9092"
+      KAFKA_USERNAME: ""
+      KAFKA_PASSWORD: ""
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      PRICESERVICE_HOST: machinesaggregateservice
+      PRICESERVICE_PORT: "8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8091:8091"
+
+  expirationnotificationservice:
+    build:
+      context: ./expirationnotificationservice
+      dockerfile: Dockerfile
+    container_name: expiration-notification
+    environment:
+      KAFKA_BROKERS: "redpanda:9092"
+      KAFKA_USERNAME: ""
+      KAFKA_PASSWORD: ""
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8092:8092"
+
+  healthcheckservice:
+    build:
+      context: ./healthcheckservice
+      dockerfile: Dockerfile
+    container_name: healthcheck
+    working_dir: /app
+    environment:
+      CONFIG_PATH: /app/app/config/docker.yaml
+      USER_PATH: "http://userservice:8052/"
+      KAFKA_USERNAME: ""
+      KAFKA_PASSWORD: ""
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "19000:9000"
+
+  feedbackservice:
+    build:
+      context: ./feedbackservice
+      dockerfile: Dockerfile
+    container_name: feedback
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8095:8095"
+
+  userservice:
+    build:
+      context: ./userservice
+      dockerfile: Dockerfile
+    container_name: user-service
+    working_dir: /app
+    environment:
+      IS_COMPOSE_CONTEXT: "1"
+      # Прокси списка мерчантов: в Docker — по имени сервиса, локально по умолчанию http://localhost:8091
+      RESOURCE_POOL_URL: "http://resourcepoolservice:8091"
+      # Прокси списка темплейтов (таблица templates_template_info) — отдельный запрос к sessionhandlerservice
+      SESSION_HANDLER_HTTP_URL: "http://sessionhandlerservice:8096"
+      # Прокси активной аренды клиента (для отображения после старта и при перезагрузке)
+      HEALTH_CHECK_URL: "http://healthcheckservice:9000"
+      # Прокси истории аренд клиента
+      HISTORY_SERVICE_URL: "http://historyservice:8899"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cloud_network
+    ports:
+      - "8052:8052"
+
+  historyservice:
+    build:
+      context: ./historyservice
+      dockerfile: Dockerfile
+    container_name: history
+    working_dir: /app
+    environment:
+      CONFIG_PATH: /app/app/config/local.yaml
+      USER_PATH: "http://userservice:8052/api/v1/auth/validate"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8899:8899"
+
+  machinesaggregateservice:
+    build:
+      context: ./machinesaggregateservice
+      dockerfile: Dockerfile
+    container_name: machines-aggregate
+    environment:
+      CONFIG_PATH: /root/config/config.yaml
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-history:
+        condition: service_completed_successfully
+    networks:
+      - cloud_network
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+
+  s3storageprocessor:
+    build:
+      context: ./s3storageprocessor
+      dockerfile: Dockerfile
+    container_name: s3-storage-processor
+    environment:
+      S3_HOST: minio
+      S3_PORT: "9000"
+      S3_USER: miniouser
+      S3_PASSWORD: ohMyMinio
+    depends_on:
+      - minio
+    networks:
+      - cloud_network
+    ports:
+      - "9090:9090"
