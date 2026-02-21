@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	keepAliveInterval = 1 * time.Minute
+	// Отправлять чаще, чем TTL сессии (1 мин на бэкенде), чтобы ключ не истекал при задержках
+	keepAliveInterval = 25 * time.Second
 )
 
 var log = logging.MustGetLogger("shareP2P")
@@ -26,7 +27,7 @@ type SessionNodeChecker interface {
 }
 
 type Usecase interface {
-	Init(ctx context.Context, cheatMode bool, nodeName string) error
+	Init(ctx context.Context, cheatMode bool, nodeName string, memoryLimitBytes, storageLimitBytes, cpuLimit int64) error
 
 	StopRequest(ctx context.Context) error
 	StopEvent(ctx context.Context, sessionID string) error

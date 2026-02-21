@@ -241,6 +241,77 @@
     .hardwareDetails .detailBlock .storageList li:last-child { border-bottom: none; }
     .hardwareDetails .detailBlock .storageList .storageName { color: var(--muted); font-weight: 500; }
     .hardwareDetails .detailBlock .storageList .storageSize { color: var(--text); }
+    .sliderRow {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .sliderRow .label { min-width: 6rem; color: var(--muted); padding-top: 0.35rem; }
+    .sliderRow .sliderWrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sliderRow .sliderTrack {
+      position: relative;
+      width: 100%;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .sliderRow .sliderTrack::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    .sliderRow .sliderTrackFill {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 6px;
+      background: var(--accent);
+      border-radius: 3px;
+      pointer-events: none;
+      transition: width 0.05s ease-out;
+    }
+    .sliderRow .sliderThumb {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px var(--surface);
+      cursor: grab;
+      left: 0;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.05s ease-out;
+      z-index: 1;
+    }
+    .sliderRow .sliderThumb:active { cursor: grabbing; }
+    .sliderRow .sliderTicks {
+      position: relative;
+      height: 1.4em;
+      margin-top: 0.25rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .sliderRow .sliderTicks span {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .sliderRow span.sliderValue { min-width: 4rem; color: var(--text); padding-top: 0.35rem; }
     .rent-error-row {
       margin-top: 0.75rem;
       padding: 0.6rem 0;
@@ -248,6 +319,25 @@
       color: var(--danger);
       line-height: 1.4;
     }
+    .preloader-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+    }
+    .preloader-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: preloader-spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes preloader-spin {
+      to { transform: rotate(360deg); }
+    }
+    .preloader-wrap .cardHint { margin: 0; }
     @media (max-width: 768px) {
       .app { padding: 1.25rem 1rem 2rem; }
       .appHeader { margin-bottom: 1rem; }
@@ -300,13 +390,60 @@
     </div>
 
     <div id="panelRent" class="panel">
-      <p class="cardHint">Включите приём аренды — покупатель сможет выбрать вас и запустить сеанс. Завершите сеанс, когда аренда закончится.</p>
-      <div class="form-group">
+      <div id="hardwareLoadingMessage" class="form-group" style="display: none;">
+        <div class="preloader-wrap">
+          <div class="preloader-spinner" aria-hidden="true"></div>
+          <p class="cardHint">Дождитесь загрузки характеристик вашего компьютера — затем станут доступны настройки и кнопка «Включить приём аренды».</p>
+        </div>
+      </div>
+      <div id="limitsBlock" style="display: none;">
+        <div class="form-group">
+          <label>Ограничения ресурсов для аренды</label>
+          <div class="sliderRow">
+            <span class="label">ОЗУ (ГБ):</span>
+            <div class="sliderWrap">
+              <input type="hidden" id="sliderRam" value="4">
+              <div class="sliderTrack" id="sliderRamTrack" data-slider="Ram" data-min="1" data-max="16">
+                <div class="sliderTrackFill" id="sliderRamFill"></div>
+                <div class="sliderThumb" id="sliderRamThumb"></div>
+              </div>
+              <div class="sliderTicks" id="sliderRamTicks" aria-hidden="true"></div>
+            </div>
+            <span class="sliderValue" id="sliderRamValue">4 ГБ</span>
+          </div>
+          <div class="sliderRow">
+            <span class="label">Диск (ГБ):</span>
+            <div class="sliderWrap">
+              <input type="hidden" id="sliderStorage" value="20">
+              <div class="sliderTrack" id="sliderStorageTrack" data-slider="Storage" data-min="2" data-max="100">
+                <div class="sliderTrackFill" id="sliderStorageFill"></div>
+                <div class="sliderThumb" id="sliderStorageThumb"></div>
+              </div>
+              <div class="sliderTicks" id="sliderStorageTicks" aria-hidden="true"></div>
+            </div>
+            <span class="sliderValue" id="sliderStorageValue">20 ГБ</span>
+          </div>
+          <div class="sliderRow">
+            <span class="label">Ядра CPU:</span>
+            <div class="sliderWrap">
+              <input type="hidden" id="sliderCpu" value="2">
+              <div class="sliderTrack" id="sliderCpuTrack" data-slider="Cpu" data-min="1" data-max="8">
+                <div class="sliderTrackFill" id="sliderCpuFill"></div>
+                <div class="sliderThumb" id="sliderCpuThumb"></div>
+              </div>
+              <div class="sliderTicks" id="sliderCpuTicks" aria-hidden="true"></div>
+            </div>
+            <span class="sliderValue" id="sliderCpuValue">2</span>
+          </div>
+        </div>
+        <div id="lowStorageWarning" class="rent-error-row" style="display: none;" role="alert">У вас очень мало свободного дискового пространства.</div>
+      </div>
+      <div id="nodeNameBlock" class="form-group" style="display: none;">
         <label for="nodeName" title="Название вычислительного узла (отображается у покупателя)">Название вычислительного узла</label>
         <input type="text" id="nodeName" placeholder="Например: Офисный ПК, Игровая станция" autocomplete="off">
       </div>
       <div class="actions">
-        <button class="btn-start" id="btnStart" title="Подготовить машину к приёму аренды от покупателя">Включить приём аренды</button>
+        <button class="btn-start" id="btnStart" title="Подготовить машину к приёму аренды от покупателя" disabled>Включить приём аренды</button>
         <button class="btn-stop" id="btnStop" style="display: none;" title="Завершить текущий сеанс аренды">Завершить сеанс</button>
         <button class="btn-disconnect" id="btnDisconnect" title="Отключиться от сервера">Выйти</button>
       </div>
@@ -339,8 +476,20 @@
     const btnToggleHardware = document.getElementById('btnToggleHardware');
     const hardwareToggleIcon = document.getElementById('hardwareToggleIcon');
     const hardwareDetails = document.getElementById('hardwareDetails');
+    const hardwareLoadingMessage = document.getElementById('hardwareLoadingMessage');
+    const limitsBlock = document.getElementById('limitsBlock');
+    const sliderRam = document.getElementById('sliderRam');
+    const sliderStorage = document.getElementById('sliderStorage');
+    const sliderCpu = document.getElementById('sliderCpu');
+    const sliderRamValue = document.getElementById('sliderRamValue');
+    const sliderStorageValue = document.getElementById('sliderStorageValue');
+    const sliderCpuValue = document.getElementById('sliderCpuValue');
+    const lowStorageWarning = document.getElementById('lowStorageWarning');
+    const nodeNameBlock = document.getElementById('nodeNameBlock');
     let hardwareExpanded = false;
     let hardwareData = null;
+    let hardwareLoaded = false;
+    let hardwareLoadStarted = false;
 
     const STORAGE_ACCESS = 'access_token';
     const STORAGE_REFRESH = 'refresh_token';
@@ -532,6 +681,11 @@
         btnStop.style.display = showStop ? '' : 'none';
         btnStop.disabled = false;
         if (nodeNameEl) nodeNameEl.disabled = !!showStop;
+        btnStart.disabled = !hardwareLoaded || showStop;
+        if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = hardwareLoaded ? 'none' : 'block';
+        if (limitsBlock) limitsBlock.style.display = hardwareLoaded ? 'block' : 'none';
+        if (nodeNameBlock) nodeNameBlock.style.display = hardwareLoaded ? 'block' : 'none';
+        if (state === 'connected' && !hardwareLoadStarted) loadHardwareForRent();
       } else {
         rentRow.style.display = 'none';
         if (nodeNameEl) nodeNameEl.disabled = false;
@@ -540,6 +694,11 @@
         stopConfigTimer();
         stopRentTimeTicker();
         stopRentEarningsTicker();
+        hardwareLoadStarted = false;
+        hardwareLoaded = false;
+        if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = 'none';
+        if (limitsBlock) limitsBlock.style.display = 'none';
+        if (nodeNameBlock) nodeNameBlock.style.display = 'none';
       }
 
       var showLogin = state === 'error' || (state === 'off' && !getStoredTokens().accessToken);
@@ -723,10 +882,19 @@
       var controller = new AbortController();
       var timeoutId = setTimeout(function() { controller.abort(); }, RENT_START_TIMEOUT_MS);
       try {
+        var memoryLimitGB = parseInt(sliderRam.value, 10) || 1;
+        var storageLimitGB = parseInt(sliderStorage.value, 10) || 2;
+        var cpuLimit = parseInt(sliderCpu.value, 10) || 1;
         const r = await fetch('/api/rent/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ node_name: nodeName }),
+          body: JSON.stringify({
+            node_name: nodeName,
+            cheat_mode: false,
+            memory_limit_gb: memoryLimitGB,
+            storage_limit_gb: storageLimitGB,
+            cpu_limit: cpuLimit
+          }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -849,6 +1017,191 @@
     function storageToGb(kb) {
       return kb / (1024 * 1024);
     }
+
+    var SLIDER_THUMB_W = 20;
+    function sliderTickValues(minVal, maxVal, suffix) {
+      suffix = suffix || '';
+      var range = maxVal - minVal;
+      if (range <= 0) return [{ v: minVal, text: minVal + suffix }];
+      var step = range <= 4 ? 1 : range <= 12 ? 2 : range <= 24 ? 4 : Math.max(1, Math.floor(range / 6));
+      var out = [];
+      for (var v = minVal; v < maxVal; v += step) out.push({ v: v, text: v + suffix });
+      out.push({ v: maxVal, text: maxVal + suffix });
+      return out;
+    }
+    function renderSliderTicks(ticksEl, minVal, maxVal, suffix) {
+      if (!ticksEl) return;
+      var items = sliderTickValues(minVal, maxVal, suffix);
+      var range = maxVal - minVal;
+      var html = items.map(function(x) {
+        var pct = range === 0 ? 50 : (x.v - minVal) / range * 100;
+        return '<span style="left:' + pct + '%">' + x.text + '</span>';
+      }).join('');
+      ticksEl.innerHTML = html;
+    }
+    function updateCustomSliderThumb(sliderId) {
+      var track = document.getElementById('slider' + sliderId + 'Track');
+      var thumb = document.getElementById('slider' + sliderId + 'Thumb');
+      var fill = document.getElementById('slider' + sliderId + 'Fill');
+      var input = document.getElementById('slider' + sliderId);
+      if (!track || !thumb || !input) return;
+      var min = parseInt(track.dataset.min, 10);
+      var max = parseInt(track.dataset.max, 10);
+      var val = parseInt(input.value, 10);
+      if (max <= min) return;
+      val = Math.max(min, Math.min(max, val));
+      input.value = val;
+      var w = track.getBoundingClientRect().width;
+      var range = max - min;
+      var pos = range === 0 ? 0 : (val - min) / range * (w - SLIDER_THUMB_W);
+      if (val === max) pos = w - SLIDER_THUMB_W;
+      pos = Math.min(pos, w - SLIDER_THUMB_W);
+      thumb.style.left = pos + 'px';
+      if (fill) fill.style.width = (pos + SLIDER_THUMB_W / 2) + 'px';
+    }
+    function sliderValueLabel(sliderId, val) {
+      if (sliderId === 'Cpu') return String(val);
+      return val + ' ГБ';
+    }
+    function setSliderDisplay(sliderId) {
+      var input = document.getElementById('slider' + sliderId);
+      var labelEl = document.getElementById('slider' + sliderId + 'Value');
+      if (input && labelEl) labelEl.textContent = sliderValueLabel(sliderId, input.value);
+    }
+    function valueFromX(track, clientX) {
+      var min = parseInt(track.dataset.min, 10);
+      var max = parseInt(track.dataset.max, 10);
+      var rect = track.getBoundingClientRect();
+      var x = clientX - rect.left;
+      var w = rect.width;
+      if (x >= w - SLIDER_THUMB_W * 0.5) return max;
+      if (x <= SLIDER_THUMB_W * 0.5) return min;
+      var ratio = (x - SLIDER_THUMB_W / 2) / (w - SLIDER_THUMB_W);
+      ratio = Math.max(0, Math.min(1, ratio));
+      return Math.round(min + ratio * (max - min));
+    }
+    function setupCustomSliders() {
+      ['Ram', 'Storage', 'Cpu'].forEach(function(sliderId) {
+        var track = document.getElementById('slider' + sliderId + 'Track');
+        var thumb = document.getElementById('slider' + sliderId + 'Thumb');
+        var input = document.getElementById('slider' + sliderId);
+        if (!track || !thumb || !input) return;
+        var fill = document.getElementById('slider' + sliderId + 'Fill');
+        track.addEventListener('click', function(e) {
+          if (e.target !== track && e.target !== thumb && e.target !== fill) return;
+          var min = parseInt(track.dataset.min, 10);
+          var max = parseInt(track.dataset.max, 10);
+          var val = Math.max(min, Math.min(max, valueFromX(track, e.clientX)));
+          input.value = val;
+          setSliderDisplay(sliderId);
+          updateCustomSliderThumb(sliderId);
+        });
+        thumb.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          function move(e) {
+            var min = parseInt(track.dataset.min, 10);
+            var max = parseInt(track.dataset.max, 10);
+            var val = Math.max(min, Math.min(max, valueFromX(track, e.clientX)));
+            input.value = val;
+            setSliderDisplay(sliderId);
+            updateCustomSliderThumb(sliderId);
+          }
+          function up() {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+          }
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', up);
+        });
+        updateCustomSliderThumb(sliderId);
+      });
+    }
+    function updateLimitsUI(data) {
+      if (!data || !limitsBlock) return;
+      var minRam = 1;
+      var maxRamGB = Math.max(minRam, Math.floor(ramKbToGb(data.ram && data.ram.total ? data.ram.total : 0)));
+      var storageAvailableKB = (data.storages && data.storages.length > 0 && data.storages[0].available != null) ? data.storages[0].available : 0;
+      var minStorage = 2;
+      var maxStorageGB = Math.max(minStorage, Math.floor(storageToGb(storageAvailableKB)));
+      var minCpu = 1;
+      var maxCpu = Math.max(minCpu, (data.cpus && data.cpus.length > 0 && data.cpus[0].total != null) ? data.cpus[0].total : 1);
+
+      var ramTrack = document.getElementById('sliderRamTrack');
+      if (ramTrack) {
+        ramTrack.dataset.min = minRam;
+        ramTrack.dataset.max = maxRamGB;
+      }
+      var midRam = minRam + Math.round((maxRamGB - minRam) / 2);
+      sliderRam.value = midRam;
+      sliderRamValue.textContent = sliderRam.value + ' ГБ';
+      renderSliderTicks(document.getElementById('sliderRamTicks'), minRam, maxRamGB, ' ГБ');
+      updateCustomSliderThumb('Ram');
+
+      var storageTrack = document.getElementById('sliderStorageTrack');
+      if (storageTrack) {
+        storageTrack.dataset.min = minStorage;
+        storageTrack.dataset.max = maxStorageGB;
+      }
+      var midStorage = minStorage + Math.round((maxStorageGB - minStorage) / 2);
+      sliderStorage.value = midStorage;
+      sliderStorageValue.textContent = sliderStorage.value + ' ГБ';
+      renderSliderTicks(document.getElementById('sliderStorageTicks'), minStorage, maxStorageGB, ' ГБ');
+      updateCustomSliderThumb('Storage');
+
+      var cpuTrack = document.getElementById('sliderCpuTrack');
+      if (cpuTrack) {
+        cpuTrack.dataset.min = minCpu;
+        cpuTrack.dataset.max = maxCpu;
+      }
+      var midCpu = minCpu + Math.round((maxCpu - minCpu) / 2);
+      sliderCpu.value = midCpu;
+      sliderCpuValue.textContent = sliderCpu.value;
+      renderSliderTicks(document.getElementById('sliderCpuTicks'), minCpu, maxCpu, '');
+      updateCustomSliderThumb('Cpu');
+
+      if (lowStorageWarning) {
+        var availableGB = storageToGb(storageAvailableKB);
+        lowStorageWarning.style.display = (availableGB < 2) ? 'block' : 'none';
+      }
+      hardwareLoaded = true;
+      if (btnStart && !rentStatus) btnStart.disabled = false;
+      if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = 'none';
+      if (limitsBlock) limitsBlock.style.display = 'block';
+      if (nodeNameBlock) nodeNameBlock.style.display = 'block';
+      // Пересчитать позиции ползунков после отрисовки (трек получает ширину только когда блок виден)
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          updateCustomSliderThumb('Ram');
+          updateCustomSliderThumb('Storage');
+          updateCustomSliderThumb('Cpu');
+        });
+      });
+    }
+
+    async function loadHardwareForRent() {
+      if (hardwareLoadStarted) return;
+      hardwareLoadStarted = true;
+      if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = 'block';
+      if (limitsBlock) limitsBlock.style.display = 'none';
+      if (btnStart) btnStart.disabled = true;
+      try {
+        var r = await fetch('/api/hardware');
+        if (!r.ok) {
+          hardwareLoadStarted = false;
+          if (hardwareLoadingMessage) hardwareLoadingMessage.innerHTML = '<p class="cardHint">Ошибка загрузки характеристик.</p>';
+          return;
+        }
+        hardwareData = await r.json();
+        updateLimitsUI(hardwareData);
+        if (hardwareExpanded && hardwareDetails) {
+          hardwareDetails.innerHTML = formatHardwareDetails(hardwareData);
+          hardwareDetails.style.display = 'block';
+        }
+      } catch (e) {
+        hardwareLoadStarted = false;
+        if (hardwareLoadingMessage) hardwareLoadingMessage.innerHTML = '<p class="cardHint">Ошибка: ' + e.message + '</p>';
+      }
+    }
     function networkSpeedToMbit(value) {
       if (value > 5000) return value / 1024;
       return value;
@@ -857,8 +1210,8 @@
       if (!data) return '';
       var html = '';
       if (data.ram) {
-        html += '<div class="detailRow"><strong title="Объём оперативной памяти">Оперативная память:</strong> ' +
-          ramKbToGb(data.ram.total || 0).toFixed(1) + ' ГБ (доступно ' + ramKbToGb(data.ram.available || 0).toFixed(1) + ' ГБ)</div>';
+        html += '<div class="detailRow"><strong title="Объём оперативной памяти">Оперативная память:</strong> всего ' +
+          ramKbToGb(data.ram.total || 0).toFixed(1) + ' ГБ</div>';
       }
       if (data.network) {
         if (data.network.load_speed != null) {
@@ -888,7 +1241,7 @@
       if (data.cpus && data.cpus.length > 0) {
         var c = data.cpus[0];
         html += '<div class="detailRow"><strong title="Процессор">Процессор:</strong> ' +
-          (c.name || '—') + ' — ядер ' + (c.total || 0) + ' (свободно ' + (c.available || 0) + ')</div>';
+          (c.name || '—') + ' — ' + (c.available ?? c.total ?? 0) + ' ядер</div>';
       }
       if (data.storages && data.storages.length > 0) {
         html += '<div class="detailBlock"><strong>Хранилища</strong><ul class="storageList">';
@@ -922,6 +1275,8 @@
         hardwareDetails.innerHTML = '<p class="cardHint">Ошибка: ' + e.message + '</p>';
       }
     }
+    setupCustomSliders();
+
     btnToggleHardware.addEventListener('click', function() {
       hardwareExpanded = !hardwareExpanded;
       hardwareToggleIcon.textContent = hardwareExpanded ? '▼' : '▶';

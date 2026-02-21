@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import { api, type ActiveRent, type ClientRentSettings, type RentHistoryItem, type AvailableMerchant, type MerchantDetails, type TemplateInfo } from '../api/client'
+import { api, createRentSessionConnection, type ActiveRent, type ClientRentSettings, type RentHistoryItem, type AvailableMerchant, type MerchantDetails, type TemplateInfo } from '../api/client'
 import styles from './ClientView.module.css'
 
 const RANGE_OPTIONS = [7, 14, 30] as const
@@ -224,6 +224,23 @@ export default function ClientView() {
   const hasActive = activeRent != null && typeof activeRent === 'object'
   const isConfiguring = hasActive && (activeRent.status === 'pending')
   const isStarted = hasActive && (activeRent.status === 'started' || activeRent.status === 'running')
+
+  // Постоянное WS-подключение для аренды: keepalive с request_id продлевает TTL на бэкенде (без этого сессия оборвётся через 1 мин)
+  useEffect(() => {
+    if (!hasActive || !activeRent?.id || !accessToken) return
+    const conn = createRentSessionConnection({
+      wsBaseUrl: WS_BASE_URL,
+      accessToken,
+      requestId: activeRent.id,
+      onMessage: (data) => {
+        if (data?.type === 'session-status-updated' && data?.content) {
+          setActiveRent((prev) => prev ? { ...prev, status: data.content?.status ?? prev.status } : prev)
+        }
+      },
+      onClose: () => { loadActive({ keepPreviousIfNull: true, silent: true }) },
+    })
+    return () => conn.close()
+  }, [hasActive, activeRent?.id, accessToken, WS_BASE_URL, loadActive])
 
   // Обновление времени сессии раз в секунду для запущенной аренды
   const [sessionTick, setSessionTick] = useState(0)
@@ -558,7 +575,7 @@ export default function ClientView() {
                   <div className={styles.merchantDetails}>
                     <div className={styles.detailRow}>
                       <strong title="Объём оперативной памяти">Оперативная память:</strong>{' '}
-                      {ramKbToGb(activeMerchantDetails.total_ram).toFixed(1)} ГБ (доступно {ramKbToGb(activeMerchantDetails.available_ram).toFixed(1)} ГБ)
+                      {ramKbToGb(activeMerchantDetails.total_ram).toFixed(1)} ГБ
                     </div>
                     {activeMerchantDetails.load_speed != null && (
                       <div className={styles.detailRow}>
@@ -580,7 +597,7 @@ export default function ClientView() {
                       {activeMerchantDetails.gpus && activeMerchantDetails.gpus.length > 0 ? (
                         (() => {
                           const g = activeMerchantDetails.gpus[0]
-                          return `${g.name} — видеопамять ${ramKbToGb(g.total_vram).toFixed(1)} ГБ (свободно ${ramKbToGb(g.available_vram).toFixed(1)} ГБ)${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                          return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
                         })()
                       ) : (
                         'отсутствует'
@@ -588,8 +605,8 @@ export default function ClientView() {
                     </div>
                     {activeMerchantDetails.cpus && activeMerchantDetails.cpus.length > 0 && (
                       <div className={styles.detailRow}>
-                        <strong title="Процессор">Процессор:</strong>
-                        {activeMerchantDetails.cpus[0].name} — ядер {activeMerchantDetails.cpus[0].total} (свободно {activeMerchantDetails.cpus[0].available})
+                        <strong title="Процессор">Процессор:</strong>{' '}
+                        {activeMerchantDetails.cpus[0].name} — {activeMerchantDetails.cpus[0].available} ядер
                       </div>
                     )}
                     {activeMerchantDetails.storages && activeMerchantDetails.storages.length > 0 && (
@@ -598,7 +615,7 @@ export default function ClientView() {
                         <ul>
                           {activeMerchantDetails.storages.map((s, i) => (
                             <li key={i}>
-                              {s.type} {s.name} — всего {storageToGb(s.total).toFixed(1)} ГБ, свободно {storageToGb(s.available).toFixed(1)} ГБ
+                              {s.type} {s.name} — {storageToGb(s.available).toFixed(1)} ГБ
                             </li>
                           ))}
                         </ul>
@@ -953,7 +970,7 @@ export default function ClientView() {
                         <div className={styles.merchantDetails}>
                           <div className={styles.detailRow}>
                             <strong title="Объём оперативной памяти">Оперативная память:</strong>{' '}
-                            {ramKbToGb(m.details.total_ram).toFixed(1)} ГБ (доступно {ramKbToGb(m.details.available_ram).toFixed(1)} ГБ)
+                            {ramKbToGb(m.details.total_ram).toFixed(1)} ГБ
                           </div>
                           {m.details.load_speed != null && (
                             <div className={styles.detailRow}>
@@ -975,7 +992,7 @@ export default function ClientView() {
                             {m.details.gpus && m.details.gpus.length > 0 ? (
                               (() => {
                                 const g = m.details.gpus[0]
-                                return `${g.name} — видеопамять ${ramKbToGb(g.total_vram).toFixed(1)} ГБ (свободно ${ramKbToGb(g.available_vram).toFixed(1)} ГБ)${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                                return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
                               })()
                             ) : (
                               'отсутствует'
@@ -983,8 +1000,8 @@ export default function ClientView() {
                           </div>
                           {m.details.cpus && m.details.cpus.length > 0 && (
                             <div className={styles.detailRow}>
-                              <strong title="Процессор">Процессор:</strong>
-                              {m.details.cpus[0].name} — ядер {m.details.cpus[0].total} (свободно {m.details.cpus[0].available})
+                              <strong title="Процессор">Процессор:</strong>{' '}
+                              {m.details.cpus[0].name} — {m.details.cpus[0].available} ядер
                             </div>
                           )}
                           {m.details.storages && m.details.storages.length > 0 && (
@@ -993,7 +1010,7 @@ export default function ClientView() {
                               <ul>
                                 {m.details.storages.map((s, i) => (
                                   <li key={i}>
-                                    {s.type} {s.name} — всего {storageToGb(s.total).toFixed(1)} ГБ, свободно {storageToGb(s.available).toFixed(1)} ГБ
+                                    {s.type} {s.name} — {storageToGb(s.available).toFixed(1)} ГБ
                                   </li>
                                 ))}
                               </ul>

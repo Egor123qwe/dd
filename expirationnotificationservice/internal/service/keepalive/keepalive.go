@@ -31,20 +31,33 @@ func New(cache Cache, cfg config.RedisConfig) *Service {
 }
 
 func (s *Service) UpdateTTL(ctx context.Context, message message.Message) {
-	sessionKey := fmt.Sprintf("%s %s", event.SessionIDType, message.Meta.Conn.SessionID)
-	clientKey := fmt.Sprintf("%s %s", event.ClientIDType, message.Meta.Conn.UserID)
-	
-	if message.Meta.Conn.SessionID != "" {
-		err := s.cache.Expire(ctx, sessionKey, time.Minute*time.Duration(s.cfg.TTL))
-		if err != nil {
-			log.Error().Err(err).Msg("Can not update TTL")
-			return
+	ttl := time.Minute * time.Duration(s.cfg.TTL)
+
+	// Продлеваем client_user_id (по keepalive от покупателя или мерчанта)
+	if message.Meta.Conn.UserID != "" {
+		clientKey := fmt.Sprintf("%s %s", event.ClientIDType, message.Meta.Conn.UserID)
+		if err := s.cache.Expire(ctx, clientKey, ttl); err != nil {
+			log.Error().Err(err).Str("key", clientKey).Msg("can not update TTL")
 		}
 	}
 
-	err := s.cache.Expire(ctx, clientKey, time.Minute*time.Duration(s.cfg.TTL))
-	if err != nil {
-		log.Error().Err(err).Msg("Can not update TTL")
-		return
+	// Продлеваем session_id (по keepalive от мерчанта — в Conn приходит session_id узла)
+	sessionID := message.Meta.Conn.SessionID
+	if sessionID == "" {
+		sessionID = message.Content.SessionID
+	}
+	if sessionID != "" {
+		sessionKey := fmt.Sprintf("%s %s", event.SessionIDType, sessionID)
+		if err := s.cache.Expire(ctx, sessionKey, ttl); err != nil {
+			log.Error().Err(err).Str("key", sessionKey).Msg("can not update TTL")
+		}
+	}
+
+	// Продлеваем request_id (по keepalive от покупателя с content.request_id)
+	if message.Content.RequestID != "" {
+		requestKey := fmt.Sprintf("%s %s", event.RequestIDType, message.Content.RequestID)
+		if err := s.cache.Expire(ctx, requestKey, ttl); err != nil {
+			log.Error().Err(err).Str("key", requestKey).Msg("can not update TTL")
+		}
 	}
 }

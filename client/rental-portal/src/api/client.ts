@@ -63,7 +63,8 @@ async function requestOrNotFound<T>(path: string, fallback: T, options: RequestI
 
 const WS_CONNECT_TIMEOUT_MS = 8000   // если за это время WS не открылся — считаем, что не подключается
 const WS_RESPONSE_TIMEOUT_MS = 15000 // ожидание ответа на start-session после открытия соединения
-const KEEPALIVE_INTERVAL_MS = 60 * 1000 // 1 min, как в merchantclient
+// Чаще, чем TTL на бэкенде (1 мин), чтобы ключ client_user_id не истекал при задержках
+const KEEPALIVE_INTERVAL_MS = 25 * 1000 // 25 s
 
 function nextMessageId(): string {
   return typeof crypto !== 'undefined' && crypto.randomUUID
@@ -89,11 +90,13 @@ export type WsRentMessage = {
 
 /**
  * Постоянное WS-подключение для сессии аренды: приём сообщений (session-status-updated и др.)
- * и отправка keepalive раз в минуту. Вызывать при наличии активной аренды (в т.ч. после перезагрузки).
+ * и отправка keepalive каждые 25 с (и сразу после открытия). request_id нужен для продления TTL аренды на бэкенде.
  */
 export function createRentSessionConnection(params: {
   wsBaseUrl: string
   accessToken: string
+  /** request_id активной аренды — передаётся в keepalive, чтобы бэкенд продлевал TTL (без этого сессия оборвётся по таймауту) */
+  requestId?: string
   onMessage: (data: WsRentMessage) => void
   onClose?: () => void
 }): { close: () => void } {
@@ -102,6 +105,18 @@ export function createRentSessionConnection(params: {
   const url = `${base}${path}?access_token=${encodeURIComponent(params.accessToken)}`
   const ws = new WebSocket(url)
   let keepaliveId: ReturnType<typeof setInterval> | null = null
+
+  const sendKeepalive = () => {
+    if (ws.readyState === WebSocket.OPEN) {
+      try {
+        const content: { request_id?: string } = {}
+        if (params.requestId) content.request_id = params.requestId
+        ws.send(JSON.stringify({ type: 'keepalive', meta: { message_id: nextMessageId() }, content }))
+      } catch {
+        close()
+      }
+    }
+  }
 
   const close = () => {
     if (keepaliveId != null) {
@@ -117,15 +132,8 @@ export function createRentSessionConnection(params: {
   }
 
   ws.onopen = () => {
-    keepaliveId = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(JSON.stringify({ type: 'keepalive', meta: { message_id: nextMessageId() }, content: {} }))
-        } catch {
-          close()
-        }
-      }
-    }, KEEPALIVE_INTERVAL_MS)
+    sendKeepalive()
+    keepaliveId = setInterval(sendKeepalive, KEEPALIVE_INTERVAL_MS)
   }
 
   ws.onmessage = (event) => {

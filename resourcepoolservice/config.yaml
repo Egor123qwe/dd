@@ -30,4 +30,8 @@ Redis:
   Port: ""
   Password: ""
   DB: "0"
-  TTL: 5
+  TTL: 1
+
+# URL sessionhandlerservice для остановки аренды при отключении узла с портала (например http://sessionhandlerservice:8096)
+SessionHandler:
+  URL: ""

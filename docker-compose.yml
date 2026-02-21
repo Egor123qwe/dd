@@ -290,6 +290,8 @@ services:
       REDIS_PORT: "6379"
       PRICESERVICE_HOST: machinesaggregateservice
       PRICESERVICE_PORT: "8001"
+      # Остановка аренды при отключении узла с портала
+      SESSION_HANDLER_URL: "http://sessionhandlerservice:8096"
     depends_on:
       postgres:
         condition: service_healthy

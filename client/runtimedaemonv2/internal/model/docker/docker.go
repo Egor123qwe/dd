@@ -33,6 +33,11 @@ type ContainerSettings struct {
 	SharedVolume *SharedVolume
 
 	TemplateID string
+
+	// Limits for container (0 = no limit). Memory/Storage in bytes, CPUs = cores.
+	MemoryLimitBytes  int64
+	StorageLimitBytes int64
+	CPULimit          int64
 }
 
 type SharedVolume struct {

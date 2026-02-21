@@ -10,6 +10,7 @@ import (
 
 	broker "gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/broker/kafka"
 	"gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/cache"
+	"gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/client/sessionhandler"
 	"gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/config"
 	handler "gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/handler/broker"
 	"gitlab.roy9.ru/roy9/backend/statemachine/resourcepoolservice/internal/handler/merchant"
@@ -92,7 +93,11 @@ func main() {
 	go brokerConsumer.ConsumeInput(ctx)
 	go brokerConsumer.ConsumeNotification(ctx)
 
-	restServer := resthandler.New(cfg.Server.Port, merchantRepository)
+	var rentStopper resthandler.RentStopper
+	if cfg.SessionHandler.URL != "" {
+		rentStopper = sessionhandler.New(cfg.SessionHandler.URL)
+	}
+	restServer := resthandler.New(cfg.Server.Port, merchantRepository, rentStopper)
 	go func() {
 		if err := restServer.Run(ctx); err != nil {
 			log.Error().Err(err).Msg("REST server stopped")

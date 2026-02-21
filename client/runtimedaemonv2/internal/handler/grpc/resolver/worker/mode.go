@@ -26,17 +26,20 @@ func (h Handler) ChangeMode(ctx context.Context, req *model.ChangeModeReq) (*mod
 	}
 
 	if req.Docker != nil {
+		opts := req.Docker.Container.Options
 		containerOptions := docker.ContainerSettings{
-			TemplateID: req.Docker.Container.TemplateID,
+			TemplateID:         req.Docker.Container.TemplateID,
+			MemoryLimitBytes:  int64(opts.GetMemoryLimitBytes()),
+			StorageLimitBytes: int64(opts.GetStorageLimitBytes()),
+			CPULimit:          int64(opts.GetCpuLimit()),
 		}
 
-		if req.Docker.Container.Options.SharedVolume != nil {
+		if opts.SharedVolume != nil {
 			containerOptions.SharedVolume = &docker.SharedVolume{
-				AccessKeyID:     req.Docker.Container.Options.SharedVolume.Credentials.AccessKeyID,
-				SecretAccessKey: req.Docker.Container.Options.SharedVolume.Credentials.SecretAccessKey,
-
-				BucketName: req.Docker.Container.Options.SharedVolume.BucketName,
-				Mount:      req.Docker.Container.Options.SharedVolume.VolumeMount,
+				AccessKeyID:     opts.SharedVolume.Credentials.AccessKeyID,
+				SecretAccessKey: opts.SharedVolume.Credentials.SecretAccessKey,
+				BucketName:      opts.SharedVolume.BucketName,
+				Mount:           opts.SharedVolume.VolumeMount,
 			}
 		}
 

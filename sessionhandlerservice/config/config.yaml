@@ -3,8 +3,8 @@ server:
         port: "8096"
 
 rent:
-    client_ttl: 5m
-    rent_ttl: 15m
+    client_ttl: 1m
+    rent_ttl: 1m
 
     settings:
         piko:

@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/model/session"
 	"gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/server/launcher"
 	"gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/service"
+	rentRepo "gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/storage/db/psql/repo/rent"
 )
 
 var logHTTP = logging.MustGetLogger("http")
@@ -37,6 +39,7 @@ func (s *server) Serve(ctx context.Context) error {
 	mux.HandleFunc("/api/client/rent/settings", s.handleClientRentSettings)
 	mux.HandleFunc("/api/admin/templates", s.handleAdminTemplatesCreate)
 	mux.HandleFunc("/api/admin/templates/", s.handleAdminTemplatesByID)
+	mux.HandleFunc("/internal/merchant/session/", s.handleInternalStopByMerchantSessionID)
 
 	httpServer := &http.Server{Addr: ":" + s.port, Handler: mux}
 	go func() {
@@ -297,6 +300,50 @@ func (s *server) handleClientRentStop(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logHTTP.Errorf("client rent stop: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"ok":true}`))
+}
+
+// handleInternalStopByMerchantSessionID — POST /internal/merchant/session/:sessionId/stop.
+// Вызывается resourcepoolservice при отключении узла с портала: останавливает аренду по session_id узла.
+func (s *server) handleInternalStopByMerchantSessionID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	sessionID := strings.TrimPrefix(r.URL.Path, "/internal/merchant/session/")
+	sessionID = strings.TrimSuffix(sessionID, "/stop")
+	sessionID = strings.Trim(sessionID, "/")
+	if sessionID == "" {
+		http.Error(w, "session_id required", http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	requestID, err := s.srv.Session().GetMerchantRent(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, rentRepo.ErrRentNotFound) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		logHTTP.Errorf("get merchant rent by session_id: %v", err)
+		http.Error(w, "failed to get rent", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = s.srv.Session().Stop(ctx, session.StopReq{
+		RequestID: requestID,
+		Reason:    "node disconnected from portal",
+	})
+	if err != nil {
+		logHTTP.Errorf("internal stop by merchant session_id: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

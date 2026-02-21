@@ -27,13 +27,19 @@ type MerchantSessionLister interface {
 	Stop(ctx context.Context, sessionID, deletionReason string) error
 }
 
-type Server struct {
-	port string
-	list MerchantSessionLister
+// RentStopper останавливает аренду по session_id узла (вызов sessionhandlerservice). Может быть nil.
+type RentStopper interface {
+	StopRentByMerchantSessionID(ctx context.Context, sessionID string) error
 }
 
-func New(port string, list MerchantSessionLister) *Server {
-	return &Server{port: port, list: list}
+type Server struct {
+	port        string
+	list        MerchantSessionLister
+	rentStopper RentStopper
+}
+
+func New(port string, list MerchantSessionLister, rentStopper RentStopper) *Server {
+	return &Server{port: port, list: list, rentStopper: rentStopper}
 }
 
 type merchantResp struct {
@@ -275,6 +281,11 @@ func (s *Server) handleMerchantSessionStop(w http.ResponseWriter, r *http.Reques
 		log.Error().Err(err).Msg("stop session")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
+	}
+	if s.rentStopper != nil {
+		if err := s.rentStopper.StopRentByMerchantSessionID(ctx, sessionID); err != nil {
+			log.Error().Err(err).Str("session_id", sessionID).Msg("stop rent by merchant session_id (node already marked stopped)")
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]bool{"ok": true})

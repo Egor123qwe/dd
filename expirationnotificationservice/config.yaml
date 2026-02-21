@@ -13,7 +13,7 @@ Redis:
   Host: ""
   Port: ""
   Password: ""
-  # ttl in minutes
-  TTL: 5
+  # ttl in minutes (key extension on keepalive)
+  TTL: 1
   DBNumbers:
     - 0

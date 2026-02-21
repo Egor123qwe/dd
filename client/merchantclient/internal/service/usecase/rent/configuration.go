@@ -13,7 +13,7 @@ const (
 	configurationPath = "./runtime.conf"
 )
 
-func (u usecase) newConfiguration(hardware *rdModel.SystemInfo, useMock bool) (hardwareModel.Session, error) {
+func (u usecase) newConfiguration(hardware *rdModel.SystemInfo, useMock bool, memoryLimitBytes, storageLimitBytes, cpuLimit int64) (hardwareModel.Session, error) {
 	var result hardwareModel.Session
 
 	if hardware != nil {
@@ -29,7 +29,35 @@ func (u usecase) newConfiguration(hardware *rdModel.SystemInfo, useMock bool) (h
 		result = u.mergeConfigurations(result, mock)
 	}
 
+	// Send user-selected limits to backend as "available" resources (not raw hardware)
+	if memoryLimitBytes > 0 || storageLimitBytes > 0 || cpuLimit > 0 {
+		result = u.applyUserLimits(result, memoryLimitBytes, storageLimitBytes, cpuLimit)
+	}
+
 	return result, nil
+}
+
+// applyUserLimits overwrites Session RAM/CPU/Storage with user-selected limits (in bytes/cores)
+// so the backend sees what the merchant offered, not raw hardware.
+func (u usecase) applyUserLimits(s hardwareModel.Session, memoryLimitBytes, storageLimitBytes, cpuLimit int64) hardwareModel.Session {
+	const bytesPerKB = 1024
+	if memoryLimitBytes > 0 {
+		kb := memoryLimitBytes / bytesPerKB
+		s.TotalRAM = kb
+		s.AvailableRAM = kb
+		s.UsedRAM = 0
+	}
+	if cpuLimit > 0 && len(s.CPUs) > 0 {
+		s.CPUs[0].Total = int(cpuLimit)
+		s.CPUs[0].Available = int(cpuLimit)
+	}
+	if storageLimitBytes > 0 && len(s.StorageDevices) > 0 {
+		kb := storageLimitBytes / bytesPerKB
+		s.StorageDevices[0].Total = kb
+		s.StorageDevices[0].Available = kb
+		s.StorageDevices[0].Used = 0
+	}
+	return s
 }
 
 func (u usecase) mockConfiguration() (mockHardware.Hardware, error) {

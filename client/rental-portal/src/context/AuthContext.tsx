@@ -158,6 +158,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasSystemSettingsWrite = permissions.includes(PERMISSION_SYSTEM_SETTINGS_WRITE);
 
+  // Опрос баланса раз в несколько секунд, пока пользователь залогинен
+  const BALANCE_POLL_MS = 5000;
+  useEffect(() => {
+    if (userId == null) return;
+    const interval = setInterval(() => refreshBalance(userId), BALANCE_POLL_MS);
+    return () => clearInterval(interval);
+  }, [userId, refreshBalance]);
+
   return (
     <AuthContext.Provider
       value={{

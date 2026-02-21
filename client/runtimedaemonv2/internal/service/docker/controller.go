@@ -40,6 +40,12 @@ func (s service) ChangeMode(ctx context.Context, req model.Settings) error {
 			ForUserID: req.Options.ForUserID,
 
 			Template: template,
+
+			Options: containerModel.Options{
+				MemoryLimitBytes:  req.Options.Container.MemoryLimitBytes,
+				StorageLimitBytes: req.Options.Container.StorageLimitBytes,
+				CPULimit:          req.Options.Container.CPULimit,
+			},
 		}
 
 		if req.Options.Container.SharedVolume != nil {
@@ -90,9 +96,9 @@ func (s service) ChangeMode(ctx context.Context, req model.Settings) error {
 		}
 
 	case false:
-		if err := s.api.StopAllContainers(ctx); err != nil {
-			return fmt.Errorf("failed to stop container: %w", err)
-		}
+		//if err := s.api.StopAllContainers(ctx); err != nil {
+		//	return fmt.Errorf("failed to stop container: %w", err)
+		//}
 
 		if err := s.volume.Shared().Disconnect(ctx); err != nil {
 			return fmt.Errorf("failed to disconnect shared volume: %w", err)

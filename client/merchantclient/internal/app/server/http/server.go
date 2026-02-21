@@ -230,14 +230,20 @@ func (s Server) handleRentStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		CheatMode bool   `json:"cheat_mode"`
-		NodeName  string `json:"node_name"`
+		CheatMode      bool   `json:"cheat_mode"`
+		NodeName       string `json:"node_name"`
+		MemoryLimitGB  int64  `json:"memory_limit_gb"`
+		StorageLimitGB int64  `json:"storage_limit_gb"`
+		CPULimit       int64  `json:"cpu_limit"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
-	if err := rentUC.Init(r.Context(), body.CheatMode, body.NodeName); err != nil {
+	const bytesPerGB = 1024 * 1024 * 1024
+	memoryLimitBytes := body.MemoryLimitGB * bytesPerGB
+	storageLimitBytes := body.StorageLimitGB * bytesPerGB
+	if err := rentUC.Init(r.Context(), body.CheatMode, body.NodeName, memoryLimitBytes, storageLimitBytes, body.CPULimit); err != nil {
 		log.Warningf("rent start failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

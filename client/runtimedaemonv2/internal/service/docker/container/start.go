@@ -39,11 +39,14 @@ func (s service) Start(ctx context.Context, settings container.Settings) (string
 		}
 
 		createReq := api.CreateContainerReq{
-			UseGPU:  template.Configuration.UseGPU,
-			Image:   fmt.Sprintf("%s:%s", template.ImageName, template.ImageTag),
-			Name:    Name(template.ID),
-			Volumes: volumes,
-			Envs:    template.Configuration.Envs,
+			UseGPU:   template.Configuration.UseGPU,
+			Image:    fmt.Sprintf("%s:%s", template.ImageName, template.ImageTag),
+			Name:     Name(template.ID),
+			Volumes:  volumes,
+			Envs:     template.Configuration.Envs,
+			CPUs:     settings.Options.CPULimit,
+			Memory:   settings.Options.MemoryLimitBytes,
+			Storage:  settings.Options.StorageLimitBytes,
 		}
 
 		containerId, err = s.api.CreateContainer(ctx, createReq)

@@ -9,11 +9,16 @@ import (
 )
 
 type Config struct {
-	Server       ServerConfig
-	Kafka        KafkaConfig
-	Database     DatabaseConfig
-	Redis        RedisConfig
-	PriceService PriceServiceConfig
+	Server          ServerConfig
+	Kafka           KafkaConfig
+	Database        DatabaseConfig
+	Redis           RedisConfig
+	PriceService    PriceServiceConfig
+	SessionHandler  SessionHandlerConfig
+}
+
+type SessionHandlerConfig struct {
+	URL string `mapstructure:"url"` // base URL of sessionhandlerservice, e.g. http://sessionhandlerservice:8096
 }
 
 type ServerConfig struct {

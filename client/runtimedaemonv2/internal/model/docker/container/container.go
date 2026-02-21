@@ -24,6 +24,10 @@ type Settings struct {
 
 type Options struct {
 	SharedVolume *volume.SharedVolume
+
+	MemoryLimitBytes  int64
+	StorageLimitBytes int64
+	CPULimit          int64
 }
 
 type State struct {

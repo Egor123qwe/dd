@@ -20,8 +20,8 @@ network:
 
   piko:
     version: "0.6.0"
-    server_url: "http://localhost:8001"  # Для продакшена: "http://YOUR_IP:8001"
-    link_template: "http://%s.localhost:8000"  # Для продакшена: "http://%s.YOUR_IP:8000" (например: "http://%s.192.168.1.100:8000")
+    server_url: "http://localhost:8011"  # Для продакшена: "http://YOUR_IP:8001"
+    link_template: "http://%s.localhost:8010"  # Для продакшена: "http://%s.YOUR_IP:8000" (например: "http://%s.192.168.1.100:8000")
 
   iptables:
     - table: "filter"
@@ -48,5 +48,5 @@ logger:
   max_size_mb: 100
   max_files: 10
   to_sentry: false
-  sentry_dsn: "https://c1b6f5c308784160aef5f74a7f63f0cd@sentry.obs.mts.ru/1407"
+  sentry_dsn: ""
 

@@ -133,13 +133,24 @@ func (u usecase) configure(ctx context.Context, clientUserID string, settings se
 
 	log.Infof("template \"%s\" dowloaded successfully", settings.Template.Title)
 
+	memBytes := u.state.GetMemoryLimitBytes()
+	storageBytes := u.state.GetStorageLimitBytes()
+	cpuCores := u.state.GetCPULimit()
+	memU64 := uint64(memBytes)
+	storageU64 := uint64(storageBytes)
+	cpu32 := int32(cpuCores)
+
 	changeModeReq := proto.ChangeModeReq{
 		Docker: &proto.DockerConfiguration{
 			ClientUserId: clientUserID,
 
 			Container: &proto.ContainerConfiguration{
 				TemplateID: settings.Template.ID,
-				Options:    &proto.ContainerConfiguration_Options{},
+				Options: &proto.ContainerConfiguration_Options{
+					MemoryLimitBytes:  &memU64,
+					StorageLimitBytes: &storageU64,
+					CpuLimit:          &cpu32,
+				},
 			},
 
 			Auth: &proto.ContainerAuthConfiguration{

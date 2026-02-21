@@ -41,6 +41,9 @@ message ContainerConfiguration {
 
         // if empty, will be skipped
         optional SharedVolume shared_volume = 1;
+        optional uint64 memory_limit_bytes = 2;
+        optional uint64 storage_limit_bytes = 3;
+        optional int32 cpu_limit = 4;  // number of cores
     }
 
     Options options    = 1;

@@ -352,7 +352,7 @@ export default function MerchantView() {
                           <>
                             <div className={styles.detailRow}>
                               <strong>Оперативная память:</strong>{' '}
-                              {ramKbToGb(detailsData.total_ram).toFixed(1)} ГБ (доступно {ramKbToGb(detailsData.available_ram).toFixed(1)} ГБ)
+                              {ramKbToGb(detailsData.available_ram).toFixed(1)} ГБ
                             </div>
                             {detailsData.load_speed != null && (
                               <div className={styles.detailRow}>
@@ -374,13 +374,13 @@ export default function MerchantView() {
                               {detailsData.gpus && detailsData.gpus.length > 0
                                 ? (() => {
                                     const g = detailsData.gpus[0]
-                                    return ` ${g.name} — видеопамять ${ramKbToGb(g.total_vram).toFixed(1)} ГБ (свободно ${ramKbToGb(g.available_vram).toFixed(1)} ГБ)${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                                    return ` ${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
                                   })()
                                 : ' отсутствует'}
                             </div>
                             {detailsData.cpus && detailsData.cpus.length > 0 && (
                               <div className={styles.detailRow}>
-                                <strong>Процессор:</strong> {detailsData.cpus[0].name} — ядер {detailsData.cpus[0].total} (свободно {detailsData.cpus[0].available})
+                                <strong>Процессор:</strong> {detailsData.cpus[0].name} — {detailsData.cpus[0].available} ядер
                               </div>
                             )}
                             {detailsData.storages && detailsData.storages.length > 0 && (
@@ -389,7 +389,7 @@ export default function MerchantView() {
                                 <ul>
                                   {detailsData.storages.map((st, i) => (
                                     <li key={i}>
-                                      {st.type} {st.name} — всего {storageToGb(st.total).toFixed(1)} ГБ, свободно {storageToGb(st.available).toFixed(1)} ГБ
+                                      {st.type} {st.name} — {storageToGb(st.available).toFixed(1)} ГБ
                                     </li>
                                   ))}
                                 </ul>

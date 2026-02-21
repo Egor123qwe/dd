@@ -26,7 +26,7 @@ user:
         test_seeders_dir: migration/postgres/user/test_seeders
         run_test_seeders: false
     token:
-        at_exp: 100m
-        rt_exp: 336h
+        at_exp: 33600h
+        rt_exp: 33600h
     registration:
         default_role_id: 1

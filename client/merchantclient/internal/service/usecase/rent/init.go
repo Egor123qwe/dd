@@ -18,7 +18,7 @@ const (
 	schedule = "infinity"
 )
 
-func (u usecase) Init(ctx context.Context, cheatMode bool, nodeName string) error {
+func (u usecase) Init(ctx context.Context, cheatMode bool, nodeName string, memoryLimitBytes, storageLimitBytes, cpuLimit int64) error {
 	u.state.Mutex().Lock()
 	defer u.state.Mutex().Unlock()
 
@@ -34,8 +34,11 @@ func (u usecase) Init(ctx context.Context, cheatMode bool, nodeName string) erro
 	}
 
 	u.state.SetStatus(state.Configuring)
+	u.state.SetMemoryLimitBytes(memoryLimitBytes)
+	u.state.SetStorageLimitBytes(storageLimitBytes)
+	u.state.SetCPULimit(cpuLimit)
 
-	initResp, err := u.init(ctx, hardware, cheatMode, nodeName)
+	initResp, err := u.init(ctx, hardware, cheatMode, nodeName, memoryLimitBytes, storageLimitBytes, cpuLimit)
 	if err != nil {
 		u.state.SetStatus(state.Disabled)
 
@@ -63,7 +66,7 @@ func (u usecase) Init(ctx context.Context, cheatMode bool, nodeName string) erro
 	return nil
 }
 
-func (u usecase) init(ctx context.Context, hardware *rdModel.SystemInfo, cheatMode bool, nodeName string) (shareP2P.InitMerchantResp, error) {
+func (u usecase) init(ctx context.Context, hardware *rdModel.SystemInfo, cheatMode bool, nodeName string, memoryLimitBytes, storageLimitBytes, cpuLimit int64) (shareP2P.InitMerchantResp, error) {
 	reqData := shareP2P.InitMerchantReq{
 		Schedule: shareP2P.Schedule{Type: schedule},
 		Prepull:  []hardwareModel.Prepull{},
@@ -71,8 +74,7 @@ func (u usecase) init(ctx context.Context, hardware *rdModel.SystemInfo, cheatMo
 	}
 
 	var err error
-
-	reqData.Hardware, err = u.newConfiguration(hardware, cheatMode)
+	reqData.Hardware, err = u.newConfiguration(hardware, cheatMode, memoryLimitBytes, storageLimitBytes, cpuLimit)
 	if err != nil {
 		return shareP2P.InitMerchantResp{}, fmt.Errorf("failed to create configuration: %w", err)
 	}
