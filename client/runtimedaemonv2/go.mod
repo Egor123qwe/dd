@@ -2,14 +2,16 @@ module gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2
 
 go 1.22.5
 
+toolchain go1.24.5
+
 require (
 	github.com/abbot/go-http-auth v0.4.0
 	github.com/andydunstall/piko v0.6.0
-	github.com/coreos/go-iptables v0.7.0
 	github.com/docker/cli v27.2.0+incompatible
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fffaraz/nvidia-smi-json v1.3.0
+	github.com/getsentry/sentry-go v0.29.1
 	github.com/google/uuid v1.6.0
 	github.com/jaypipes/ghw v0.12.0
 	github.com/klauspost/cpuid/v2 v2.2.9-0.20241026200132-ee7cba987ff4
@@ -17,6 +19,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/showwin/speedtest-go v1.7.8
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.25.0
@@ -36,7 +39,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/getsentry/sentry-go v0.29.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -58,7 +60,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

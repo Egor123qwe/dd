@@ -10,4 +10,4 @@ compile-proto:
 	$(proto_dir)/*.proto
 
 build:
-	go build -o ./merchantclient cmd/merchantclient/main.go
+	GOTOOLCHAIN=local go build -o ./merchantclient cmd/merchantclient/main.go

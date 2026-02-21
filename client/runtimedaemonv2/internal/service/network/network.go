@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	ipts "github.com/coreos/go-iptables/iptables"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/network"
 	iptablesModel "gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/network/iptables"
 	pikoModel "gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/network/piko"
@@ -41,11 +40,11 @@ type service struct {
 	mutex   *sync.Mutex
 }
 
-func New(iptablesAPI *ipts.IPTables, storage storage.NetworkRepo) Service {
+func New(storage storage.NetworkRepo) Service {
 	srv := service{
 		tailscale: tailscale.New(),
 		piko:      piko.New(),
-		iptables:  iptables.New(iptablesAPI),
+		iptables:  iptables.New(),
 
 		storage: storage,
 		mutex:   &sync.Mutex{},

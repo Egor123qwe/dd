@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/coreos/go-iptables/iptables"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/pkg/logger"
 )
 
@@ -24,8 +23,7 @@ type Service interface {
 }
 
 type service struct {
-	iptablesAPI *iptables.IPTables
-	config      Config
+	config Config
 
 	mutex *sync.Mutex
 }
@@ -33,31 +31,9 @@ type service struct {
 // used if OS != linux
 type mockService struct{}
 
-func NewClient() (*iptables.IPTables, error) {
-	if !isIptablesAvailable() {
-		return nil, nil
-	}
+func New() Service {
 
-	return iptables.New()
-}
-
-func New(iptablesAPI *iptables.IPTables) Service {
-	if !isIptablesAvailable() {
-		return mockService{}
-	}
-
-	config, err := newConfig()
-	if err != nil {
-		log.Errorf("failed to get iptables config: %v", err)
-	}
-
-	srv := &service{
-		iptablesAPI: iptablesAPI,
-		config:      config,
-		mutex:       &sync.Mutex{},
-	}
-
-	return srv
+	return mockService{}
 }
 
 func isIptablesAvailable() bool {

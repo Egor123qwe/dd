@@ -10,4 +10,4 @@ compile-proto:
 	$(proto_dir)/*.proto
 
 build:
-	go build -o ./runtimedaemon cmd/runtimedaemon/main.go
+	GOTOOLCHAIN=local go build -o ./runtimedaemon cmd/runtimedaemon/main.go

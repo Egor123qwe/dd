@@ -15,7 +15,6 @@ import (
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/server"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/server/launcher"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/service"
-	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/service/network/iptables"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/storage"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/pkg/logger"
 )
@@ -40,12 +39,7 @@ func New() (*App, error) {
 		return nil, fmt.Errorf("failed to create container client: %w", err)
 	}
 
-	iptablesAPI, err := iptables.NewClient()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create iptables client: %w", err)
-	}
-
-	srv, err := service.New(dockerAPI, iptablesAPI, storage)
+	srv, err := service.New(dockerAPI, storage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init service: %w", err)
 	}

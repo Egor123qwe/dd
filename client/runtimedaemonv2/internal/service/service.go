@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coreos/go-iptables/iptables"
 	dockerAPI "github.com/docker/docker/client"
 	dockerModel "gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/docker"
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/hardware"
@@ -58,14 +57,14 @@ type service struct {
 	healthCheckController fnController.Controller
 }
 
-func New(dockerAPI *dockerAPI.Client, iptablesAPI *iptables.IPTables, storage storage.Storage) (Service, error) {
+func New(dockerAPI *dockerAPI.Client, storage storage.Storage) (Service, error) {
 	docker, err := docker.New(dockerAPI, storage.Docker())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create docker service: %w", err)
 	}
 
 	srv := service{
-		network: network.New(iptablesAPI, storage.Network()),
+		network: network.New(storage.Network()),
 		docker:  docker,
 		system:  system.New(),
 

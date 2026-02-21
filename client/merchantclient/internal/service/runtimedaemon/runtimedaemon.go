@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gitlab.roy9.ru/roy9/backend/clientside/merchantclient/internal/service/runtimedaemon/api"
@@ -14,9 +17,21 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	execPath = "./runtimedaemon/runtimedaemon"
-)
+// runtimedaemon binary name per OS (no path)
+const daemonBinaryName = "runtimedaemon"
+
+func getRuntimeDaemonPath() (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("os.Executable: %w", err)
+	}
+	dir := filepath.Dir(execPath)
+	name := daemonBinaryName
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	return filepath.Join(dir, "runtimedaemon", name), nil
+}
 
 var (
 	ErrDaemonShutDown = errors.New("runtime daemon shut down")
@@ -61,12 +76,14 @@ func New() (API, error) {
 }
 
 func (c client) Serve(ctx context.Context) error {
-	_, err := c.cmd.Run(ctx, []string{execPath})
-
+	daemonPath, err := getRuntimeDaemonPath()
+	if err != nil {
+		return fmt.Errorf("runtime daemon path: %w", err)
+	}
+	_, err = c.cmd.Run(ctx, []string{daemonPath})
 	if err != nil && ctx.Err() == nil {
 		return fmt.Errorf("runtime daemon failed: %v", err)
 	}
-
 	return ErrDaemonShutDown
 }
 
