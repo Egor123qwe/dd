@@ -80,7 +80,7 @@
     }
     .state-value.off { color: var(--muted); }
     .state-value.connecting { color: var(--accent); }
-    .state-value.error { color: var(--danger); }
+    .state-value.error { color: var(--danger); cursor: help; }
     .state-value.connected { color: var(--success); }
     .state-value.ready,
     .state-value.inrent { color: var(--success); }
@@ -362,6 +362,11 @@
         <span class="label" title="Есть ли связь с сервером аренды">Связь с сервером</span>
         <span class="state-value connecting" id="connectionText">Загрузка…</span>
       </div>
+      <div class="row" id="dockerRow">
+        <span class="label" title="Нужен для приёма аренды">Docker</span>
+        <span class="state-value connecting" id="dockerStatusText" title="">Проверка…</span>
+      </div>
+      <div id="dockerUnavailableMessage" class="rent-error-row" style="display: none;" role="alert">Docker не запущен или недоступен. Запустите Docker или <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener">установите Docker</a> — без него приём аренды недоступен.</div>
       <div id="rentRow" class="row" style="display: none;">
         <span class="label" title="Готов ли сеанс к приёму покупателя">Состояние сеанса</span>
         <span class="state-value" id="rentStatusText">—</span>
@@ -445,6 +450,7 @@
         <label for="nodeName" title="Название вычислительного узла (отображается у покупателя)">Название вычислительного узла</label>
         <input type="text" id="nodeName" value="Мой компьютер" placeholder="Мой компьютер" autocomplete="off">
       </div>
+      <div id="dockerWarning" class="rent-error-row" style="display: none;" role="alert">Docker не запущен или недоступен. Запустите Docker или <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener">установите Docker</a> — без него приём аренды недоступен.</div>
       <div class="actions">
         <button class="btn-start" id="btnStart" title="Подготовить машину к приёму аренды от покупателя" disabled>Включить приём аренды</button>
         <button class="btn-stop" id="btnStop" style="display: none;" title="Завершить текущий сеанс аренды">Завершить сеанс</button>
@@ -488,8 +494,13 @@
     const sliderStorageValue = document.getElementById('sliderStorageValue');
     const sliderCpuValue = document.getElementById('sliderCpuValue');
     const lowStorageWarning = document.getElementById('lowStorageWarning');
+    const dockerWarning = document.getElementById('dockerWarning');
+    const dockerRow = document.getElementById('dockerRow');
+    const dockerStatusText = document.getElementById('dockerStatusText');
+    const dockerUnavailableMessage = document.getElementById('dockerUnavailableMessage');
     const nodeNameBlock = document.getElementById('nodeNameBlock');
     let hardwareExpanded = false;
+    let dockerAvailable = false;
     let hardwareData = null;
     let hardwareLoaded = false;
     let hardwareLoadStarted = false;
@@ -522,8 +533,10 @@
       Disabled: 'Не готов',
       Configuring: 'Подготовка',
       Ready: 'Готов к приёму',
-      InRent: 'Идёт аренда'
+      InRent: 'Идёт аренда',
+      Error: 'Ошибка'
     };
+    const DOCKER_UNAVAILABLE_TITLE = 'Docker не запущен или недоступен. Запустите Docker или установите Docker — без него приём аренды недоступен.';
 
     let uiState = 'loading';
     let rentStatus = null;
@@ -543,6 +556,15 @@
       panelConnect.classList.remove('visible');
       panelRent.classList.remove('visible');
     })();
+
+    function updateDockerRow(available) {
+      if (!dockerStatusText) return;
+      dockerAvailable = available === true;
+      dockerStatusText.textContent = dockerAvailable ? 'Доступен' : 'Недоступен';
+      dockerStatusText.className = 'state-value ' + (dockerAvailable ? 'connected' : 'error');
+      dockerStatusText.title = dockerAvailable ? '' : DOCKER_UNAVAILABLE_TITLE;
+      if (dockerUnavailableMessage) dockerUnavailableMessage.style.display = dockerAvailable ? 'none' : 'block';
+    }
 
     function formatCountdown(ms) {
       ms = Math.max(0, ms);
@@ -649,11 +671,22 @@
         if (detail.rent_status === 'Configuring') {
           if (configTimerIntervalId == null) startConfigTimer();
           rentStatusText.textContent = 'Подготовка… ' + formatCountdown(getConfigRemainingMs());
+          rentStatusText.title = '';
         } else {
           stopConfigTimer();
-          rentStatusText.textContent = RENT_RU[detail.rent_status] || detail.rent_status || '—';
+          if (!dockerAvailable && detail.rent_status === 'Disabled') {
+            rentStatusText.textContent = RENT_RU.Error;
+            rentStatusText.title = DOCKER_UNAVAILABLE_TITLE;
+          } else {
+            rentStatusText.textContent = RENT_RU[detail.rent_status] || detail.rent_status || '—';
+            rentStatusText.title = '';
+          }
         }
-        rentStatusText.className = 'state-value ' + (detail.rent_class || 'disabled');
+        if (!dockerAvailable && detail.rent_status === 'Disabled') {
+          rentStatusText.className = 'state-value error';
+        } else {
+          rentStatusText.className = 'state-value ' + (detail.rent_class || 'disabled');
+        }
         stateRentTime.style.display = detail.rent_status === 'InRent' ? 'flex' : 'none';
         stateRentEarnings.style.display = detail.rent_status === 'InRent' ? 'flex' : 'none';
         if (detail.total_price != null && detail.total_price > 0) {
@@ -684,8 +717,9 @@
         btnStop.style.display = showStop ? '' : 'none';
         btnStop.disabled = false;
         if (nodeNameEl) nodeNameEl.disabled = !!showStop;
-        btnStart.disabled = !hardwareLoaded || showStop;
+        btnStart.disabled = !hardwareLoaded || showStop || !dockerAvailable;
         if (limitsBlock) limitsBlock.classList.toggle('limitsDisabled', !!showStop);
+        if (dockerWarning) dockerWarning.style.display = (!dockerAvailable && !showStop) ? 'block' : 'none';
         if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = hardwareLoaded ? 'none' : 'block';
         if (limitsBlock) limitsBlock.style.display = hardwareLoaded ? 'block' : 'none';
         if (nodeNameBlock) nodeNameBlock.style.display = hardwareLoaded ? 'block' : 'none';
@@ -715,7 +749,9 @@
       try {
         const r = await fetch('/api/status');
         const d = await r.json();
+        if (d.docker_available !== undefined) updateDockerRow(d.docker_available === true);
         if (d.connected) {
+          dockerAvailable = d.docker_available === true;
           var rs = d.rent_status || 'Disabled';
           if (isPreparingRent && rs === 'Disabled') {
             rs = 'Configuring';
@@ -946,7 +982,9 @@
       try {
         var r = await fetch('/api/status');
         var d = await r.json();
+        if (d.docker_available !== undefined) updateDockerRow(d.docker_available === true);
         if (d.connected) {
+          dockerAvailable = d.docker_available === true;
           var rs = d.rent_status || 'Disabled';
           if (rs === 'Ready' || rs === 'InRent') isPreparingRent = false;
           setState('connected', {
@@ -1170,7 +1208,8 @@
         lowStorageWarning.style.display = (availableGB < 2) ? 'block' : 'none';
       }
       hardwareLoaded = true;
-      if (btnStart && !rentStatus) btnStart.disabled = false;
+      if (btnStart && !rentStatus) btnStart.disabled = !dockerAvailable;
+      if (dockerWarning) dockerWarning.style.display = !dockerAvailable ? 'block' : 'none';
       if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = 'none';
       if (limitsBlock) limitsBlock.style.display = 'block';
       if (nodeNameBlock) nodeNameBlock.style.display = 'block';

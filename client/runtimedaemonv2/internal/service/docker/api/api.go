@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	versionUnknown = "unknown"
+	versionUnknown   = "unknown"
+	dockerPingTimeout = 5 * time.Second
 )
 
 var log = logger.NewLogger("api", logger.DefaultWithSentry())
@@ -65,7 +66,9 @@ type Info struct {
 }
 
 func (s service) Info(ctx context.Context) (Info, error) {
-	_, err := s.dockerApi.Ping(ctx)
+	pingCtx, cancel := context.WithTimeout(ctx, dockerPingTimeout)
+	defer cancel()
+	_, err := s.dockerApi.Ping(pingCtx)
 	if err != nil {
 		return Info{Availability: false, Version: versionUnknown}, nil
 	}

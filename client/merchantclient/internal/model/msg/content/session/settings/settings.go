@@ -50,6 +50,10 @@ type Template struct {
 	Volumes []string       `json:"volumes"`
 	UseGPU  bool           `json:"use_gpu"`
 
+	// Минимальные требования шаблона (приходят от sessionhandlerservice, передаются в runtimedaemon для распределения storage)
+	MinStorageBytes      uint64   `json:"min_storage_bytes,omitempty"`
+	MinVolumeStorageBytes []uint64 `json:"min_volume_storage_bytes,omitempty"`
+
 	Authentication Authentication `json:"authentication"`
 }
 

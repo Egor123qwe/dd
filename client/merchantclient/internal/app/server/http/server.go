@@ -30,6 +30,7 @@ type Backend interface {
 	Connect(ctx context.Context, token string) error
 	Disconnect()
 	GetHardware(ctx context.Context) (map[string]interface{}, error)
+	GetDockerInfo(ctx context.Context) (available bool, version string, err error)
 }
 
 type Server struct {
@@ -94,6 +95,8 @@ func (s Server) Serve(ctx context.Context) error {
 	return nil
 }
 
+const dockerCheckTimeout = 8 * time.Second
+
 func (s Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -101,20 +104,27 @@ func (s Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	rentUC, connected := s.backend.Rent()
+	dockerCtx, dockerCancel := context.WithTimeout(r.Context(), dockerCheckTimeout)
+	dockerAvailable, dockerVersion, _ := s.backend.GetDockerInfo(dockerCtx)
+	dockerCancel()
 	if !connected {
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"connected":   false,
-			"rent_status": nil,
-			"rent_time":   nil,
+			"connected":        false,
+			"rent_status":     nil,
+			"rent_time":       nil,
+			"docker_available": dockerAvailable,
+			"docker_version":  dockerVersion,
 		})
 		return
 	}
 	status := rentUC.GetStatus().String()
 	resp := map[string]interface{}{
-		"connected":   true,
-		"rent_status": status,
-		"rent_time":   nil,
-		"total_price": nil,
+		"connected":        true,
+		"rent_status":      status,
+		"rent_time":        nil,
+		"total_price":      nil,
+		"docker_available": dockerAvailable,
+		"docker_version":  dockerVersion,
 	}
 	if status == "InRent" {
 		if startedAt := rentUC.GetRentStartedAt(); startedAt != nil {

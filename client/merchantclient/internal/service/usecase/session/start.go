@@ -95,9 +95,11 @@ func (u usecase) configure(ctx context.Context, clientUserID string, settings se
 			Version: settings.Template.Version,
 
 			Configuration: &proto.TemplateData_Configuration{
-				UseGPU:  settings.Template.UseGPU,
-				Volumes: settings.Template.Volumes,
-				Envs:    u.enrichEnvs(settings.Template),
+				UseGPU:                 settings.Template.UseGPU,
+				Volumes:                settings.Template.Volumes,
+				Envs:                   u.enrichEnvs(settings.Template),
+				MinStorageBytes:        minStorageBytesPtr(settings.Template.MinStorageBytes),
+				MinVolumeStorageBytes: settings.Template.MinVolumeStorageBytes,
 			},
 		},
 
@@ -233,4 +235,11 @@ func (u usecase) enrichEnvs(settings settingsModel.Template) []string {
 	}
 
 	return result
+}
+
+func minStorageBytesPtr(v uint64) *uint64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
 }

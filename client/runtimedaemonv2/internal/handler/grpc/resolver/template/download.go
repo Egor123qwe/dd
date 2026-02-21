@@ -32,6 +32,9 @@ func (h Handler) DownloadStream(req *model.DownloadTemplateReq, sender model.Tem
 
 			Volumes: req.Template.Configuration.Volumes,
 			Envs:    req.Template.Configuration.Envs,
+
+			MinStorageBytes:       req.Template.Configuration.GetMinStorageBytes(),
+			MinVolumeStorageBytes: req.Template.Configuration.MinVolumeStorageBytes,
 		},
 
 		Data: req.Template.Data,
@@ -132,6 +135,9 @@ func (h Handler) Download(ctx context.Context, req *model.DownloadTemplateReq) (
 
 			Volumes: req.Template.Configuration.Volumes,
 			Envs:    req.Template.Configuration.Envs,
+
+			MinStorageBytes:       req.Template.Configuration.GetMinStorageBytes(),
+			MinVolumeStorageBytes: req.Template.Configuration.MinVolumeStorageBytes,
 		},
 
 		Data: req.Template.Data,

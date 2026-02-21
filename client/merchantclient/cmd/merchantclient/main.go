@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"syscall"
-	"time"
 
 	"github.com/spf13/viper"
 	"gitlab.roy9.ru/roy9/backend/clientside/merchantclient/config"
@@ -16,8 +15,6 @@ import (
 	exit "gitlab.roy9.ru/roy9/backend/clientside/merchantclient/pkg/context"
 	"gitlab.roy9.ru/roy9/backend/clientside/merchantclient/pkg/logger"
 )
-
-const startTimeout = 20 * time.Second
 
 func init() {
 	viper.SetConfigType("yaml")
@@ -41,13 +38,7 @@ func main() {
 		_ = rd.Serve(ctx)
 	}()
 
-	rdWaitCtx, rdCancel := context.WithTimeout(ctx, startTimeout)
-	defer rdCancel()
-
-	if err := rd.WaitEnabled(rdWaitCtx); err != nil {
-		log.Fatalf("runtime daemon not ready: %v", err)
-	}
-
+	// Не ждём runtimedaemon/Docker — страница открывается сразу, статус Docker проверяется в /api/status
 	backend := app.NewWebBackend(rd)
 	defer backend.Disconnect()
 

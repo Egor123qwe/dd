@@ -89,6 +89,18 @@ func (b *WebBackend) Rent() (rent.Usecase, bool) {
 	return b.app.Rent(), true
 }
 
+func (b *WebBackend) GetDockerInfo(ctx context.Context) (available bool, version string, err error) {
+	info, err := b.rd.GetInfo(ctx, &proto.InfoReq{})
+	if err != nil {
+		return false, "", err
+	}
+	d := info.GetDocker()
+	if d == nil {
+		return false, "", nil
+	}
+	return d.GetAvailable(), d.GetVersion(), nil
+}
+
 func (b *WebBackend) GetHardware(ctx context.Context) (map[string]interface{}, error) {
 	hw, err := b.rd.GetHardware(ctx)
 	if err != nil {
@@ -159,6 +171,21 @@ func (b RentOnlyBackend) Connect(ctx context.Context, token string) error {
 }
 
 func (b RentOnlyBackend) Disconnect() {}
+
+func (b RentOnlyBackend) GetDockerInfo(ctx context.Context) (available bool, version string, err error) {
+	if b.RD == nil {
+		return false, "", nil
+	}
+	info, err := b.RD.GetInfo(ctx, &proto.InfoReq{})
+	if err != nil {
+		return false, "", err
+	}
+	d := info.GetDocker()
+	if d == nil {
+		return false, "", nil
+	}
+	return d.GetAvailable(), d.GetVersion(), nil
+}
 
 func (b RentOnlyBackend) GetHardware(ctx context.Context) (map[string]interface{}, error) {
 	if b.RD == nil {

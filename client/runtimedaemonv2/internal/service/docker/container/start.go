@@ -10,6 +10,25 @@ import (
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/service/docker/api"
 )
 
+// proportionalStorage распределяет totalAvailable по пропорциям минимумов:
+// контейнер (rootfs) и каждый том получают долю (min / totalUnits) * totalAvailable.
+// Если totalUnits == 0, весь объём отдаётся контейнеру, томам — 0.
+func proportionalStorage(totalAvailable int64, minContainer uint64, minVolumeBytes []uint64, numVolumes int) (containerStorage int64, volumeSizes []int64) {
+	var totalUnits uint64 = minContainer
+	for _, v := range minVolumeBytes {
+		totalUnits += v
+	}
+	if totalUnits == 0 {
+		return totalAvailable, make([]int64, numVolumes)
+	}
+	containerStorage = int64(uint64(totalAvailable) * minContainer / totalUnits)
+	volumeSizes = make([]int64, numVolumes)
+	for i := 0; i < numVolumes && i < len(minVolumeBytes); i++ {
+		volumeSizes[i] = int64(uint64(totalAvailable) * minVolumeBytes[i] / totalUnits)
+	}
+	return containerStorage, volumeSizes
+}
+
 func (s service) Start(ctx context.Context, settings container.Settings) (string, error) {
 	var containerId string
 	template := settings.Template
@@ -38,6 +57,21 @@ func (s service) Start(ctx context.Context, settings container.Settings) (string
 			)
 		}
 
+		totalAvailable := settings.Options.StorageLimitBytes
+		cfg := template.Configuration
+		containerStorage, volumeSizes := proportionalStorage(
+			totalAvailable,
+			cfg.MinStorageBytes,
+			cfg.MinVolumeStorageBytes,
+			len(template.Configuration.Volumes),
+		)
+
+		for i := range volumes {
+			if i < len(volumeSizes) {
+				volumes[i].SizeLimit = volumeSizes[i]
+			}
+		}
+
 		createReq := api.CreateContainerReq{
 			UseGPU:   template.Configuration.UseGPU,
 			Image:    fmt.Sprintf("%s:%s", template.ImageName, template.ImageTag),
@@ -46,7 +80,7 @@ func (s service) Start(ctx context.Context, settings container.Settings) (string
 			Envs:     template.Configuration.Envs,
 			CPUs:     settings.Options.CPULimit,
 			Memory:   settings.Options.MemoryLimitBytes,
-			Storage:  settings.Options.StorageLimitBytes,
+			Storage:  containerStorage,
 		}
 
 		containerId, err = s.api.CreateContainer(ctx, createReq)

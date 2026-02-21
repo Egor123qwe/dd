@@ -104,6 +104,10 @@ message TemplateData {
         repeated string       volumes = 4;
         // strings format in envs must be: ["param", "param = value", ...]
         repeated string       envs    = 3;
+
+        // Минимальные объёмы для пропорционального распределения storage поставщика [bytes]
+        optional uint64 min_storage_bytes = 7;         // минимум на контейнер (rootfs)
+        repeated uint64 min_volume_storage_bytes = 8;  // минимум на каждый том, порядок как в volumes
     }
 
     string id      = 1;

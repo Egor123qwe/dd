@@ -6,6 +6,10 @@ type Configuration struct {
 	Ports   []Port
 	Volumes []string
 	Envs    []string
+
+	// Минимальные объёмы (для пропорционального распределения storage поставщика)
+	MinStorageBytes       uint64   // минимум на контейнер (rootfs)
+	MinVolumeStorageBytes []uint64 // минимум на каждый том, в порядке Volumes
 }
 
 type Template struct {

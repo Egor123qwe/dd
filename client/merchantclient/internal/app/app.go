@@ -23,8 +23,7 @@ import (
 var log = logging.MustGetLogger("app")
 
 const (
-	startTimeout = 20 * time.Second
-	stopTimeout  = 20 * time.Second
+	stopTimeout = 20 * time.Second
 )
 
 type App struct {
@@ -116,15 +115,7 @@ func (a App) Start(ctx context.Context, opts Options) error {
 		errCh <- err
 	}()
 
-	rdWaitCtx, cancel := context.WithTimeout(ctx, startTimeout)
-	defer cancel()
-
-	if err := a.rd.WaitEnabled(rdWaitCtx); err != nil {
-		return fmt.Errorf("failed to wait for runtime daemon started: %w", err)
-	}
-
-	log.Info("runtime daemon enabled")
-
+	// Не ждём runtimedaemon/Docker — UI открывается сразу, статус Docker проверяется в /api/status
 	web := httpServer.New(RentOnlyBackend{RentUC: a.srv.Usecase().Rent(), RD: a.rd})
 	go func() {
 		_ = web.Serve(ctx)

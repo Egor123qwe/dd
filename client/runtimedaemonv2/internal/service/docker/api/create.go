@@ -3,10 +3,11 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/volume"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/docker/docker/api/types/volume"
 
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types/container"
@@ -39,12 +40,7 @@ type CreateContainerReq struct {
 }
 
 func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (string, error) {
-	if n := len(req.Volumes); n > 0 && req.Storage > 0 {
-		perVol := req.Storage / int64(n)
-		for i := range req.Volumes {
-			req.Volumes[i].SizeLimit = perVol
-		}
-	}
+	// req.Storage и req.Volumes[i].SizeLimit уже заданы вызывающим по пропорциям шаблона
 
 	// Настройка ресурсов для GPU
 	resources := container.Resources{}
@@ -90,10 +86,10 @@ func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (s
 	}
 
 	if req.Storage > 0 {
-		if hostConfig.StorageOpt == nil {
-			hostConfig.StorageOpt = make(map[string]string)
-		}
-		hostConfig.StorageOpt["size"] = fmt.Sprintf("%d", req.Storage)
+		// if hostConfig.StorageOpt == nil {
+		// 	hostConfig.StorageOpt = make(map[string]string)
+		// }
+		//hostConfig.StorageOpt["size"] = fmt.Sprintf("%d", req.Storage)
 	}
 
 	// Создаем контейнер
