@@ -80,6 +80,22 @@ func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (s
 		mounts = append(mounts, mnt)
 	}
 
+	hostConfig := &container.HostConfig{
+		PublishAllPorts: true,
+		Resources:       resources,
+		Mounts:          mounts,
+		RestartPolicy: container.RestartPolicy{
+			Name: "no",
+		},
+	}
+
+	if req.Storage > 0 {
+		if hostConfig.StorageOpt == nil {
+			hostConfig.StorageOpt = make(map[string]string)
+		}
+		hostConfig.StorageOpt["size"] = fmt.Sprintf("%d", req.Storage)
+	}
+
 	// Создаем контейнер
 	result, err := s.dockerApi.ContainerCreate(
 		ctx,
@@ -90,14 +106,7 @@ func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (s
 				"managed_by": "go-service",
 			},
 		},
-		&container.HostConfig{
-			PublishAllPorts: true,
-			Resources:       resources,
-			Mounts:          mounts,
-			RestartPolicy: container.RestartPolicy{
-				Name: "no",
-			},
-		},
+		hostConfig,
 		&network.NetworkingConfig{},
 		&v1.Platform{},
 		req.Name,

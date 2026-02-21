@@ -312,6 +312,9 @@
       white-space: nowrap;
     }
     .sliderRow span.sliderValue { min-width: 4rem; color: var(--text); padding-top: 0.35rem; }
+    #limitsBlock.limitsDisabled .sliderTrack,
+    #limitsBlock.limitsDisabled .sliderThumb { pointer-events: none; cursor: not-allowed; }
+    #limitsBlock.limitsDisabled .sliderRow { opacity: 0.75; }
     .rent-error-row {
       margin-top: 0.75rem;
       padding: 0.6rem 0;
@@ -440,7 +443,7 @@
       </div>
       <div id="nodeNameBlock" class="form-group" style="display: none;">
         <label for="nodeName" title="Название вычислительного узла (отображается у покупателя)">Название вычислительного узла</label>
-        <input type="text" id="nodeName" placeholder="Например: Офисный ПК, Игровая станция" autocomplete="off">
+        <input type="text" id="nodeName" value="Мой компьютер" placeholder="Мой компьютер" autocomplete="off">
       </div>
       <div class="actions">
         <button class="btn-start" id="btnStart" title="Подготовить машину к приёму аренды от покупателя" disabled>Включить приём аренды</button>
@@ -682,6 +685,7 @@
         btnStop.disabled = false;
         if (nodeNameEl) nodeNameEl.disabled = !!showStop;
         btnStart.disabled = !hardwareLoaded || showStop;
+        if (limitsBlock) limitsBlock.classList.toggle('limitsDisabled', !!showStop);
         if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = hardwareLoaded ? 'none' : 'block';
         if (limitsBlock) limitsBlock.style.display = hardwareLoaded ? 'block' : 'none';
         if (nodeNameBlock) nodeNameBlock.style.display = hardwareLoaded ? 'block' : 'none';
@@ -697,7 +701,7 @@
         hardwareLoadStarted = false;
         hardwareLoaded = false;
         if (hardwareLoadingMessage) hardwareLoadingMessage.style.display = 'none';
-        if (limitsBlock) limitsBlock.style.display = 'none';
+        if (limitsBlock) { limitsBlock.style.display = 'none'; limitsBlock.classList.remove('limitsDisabled'); }
         if (nodeNameBlock) nodeNameBlock.style.display = 'none';
       }
 
@@ -1088,6 +1092,7 @@
         if (!track || !thumb || !input) return;
         var fill = document.getElementById('slider' + sliderId + 'Fill');
         track.addEventListener('click', function(e) {
+          if (rentStatus && rentStatus !== 'Disabled') return;
           if (e.target !== track && e.target !== thumb && e.target !== fill) return;
           var min = parseInt(track.dataset.min, 10);
           var max = parseInt(track.dataset.max, 10);
@@ -1097,6 +1102,7 @@
           updateCustomSliderThumb(sliderId);
         });
         thumb.addEventListener('mousedown', function(e) {
+          if (rentStatus && rentStatus !== 'Disabled') return;
           e.preventDefault();
           function move(e) {
             var min = parseInt(track.dataset.min, 10);

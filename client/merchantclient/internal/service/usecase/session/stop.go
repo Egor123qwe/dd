@@ -26,12 +26,29 @@ func (u usecase) StopEvent(ctx context.Context, requestID string) error {
 		return fmt.Errorf("request id is not equal to current request id")
 	}
 
-	if err := u.reset(ctx); err != nil {
-		log.Warningf("failed while reseting merchant: %s", err)
+	// Покупатель остановил аренду — переводим поставщика обратно в «Готов к аренде» (Ready),
+	// не отключая сессию и не вызывая ChangeMode(Disable), чтобы поставщик оставался в списке и мог принять следующего покупателя.
+	u.transitionToReadyAfterRentEnd()
+
+	log.Infof("session [%s] stopped by client, merchant ready for next rent", requestID)
+
+	return nil
+}
+
+// TransitionToReadyAfterRentEnd вызывается при получении share-p2p-stop: аренда завершена, переводим в Ready без отключения сессии.
+func (u usecase) TransitionToReadyAfterRentEnd(ctx context.Context, sessionID string) error {
+	u.state.Mutex().Lock()
+	defer u.state.Mutex().Unlock()
+
+	if u.state.GetStatus() != state.InRent {
+		return nil
+	}
+	if u.state.GetSessionID() != sessionID {
+		return fmt.Errorf("session id mismatch")
 	}
 
-	log.Infof("session [%s] stoped by client", requestID)
-
+	u.transitionToReadyAfterRentEnd()
+	log.Infof("session [%s] rent ended (share-p2p-stop), merchant ready for next rent", sessionID)
 	return nil
 }
 
@@ -83,6 +100,17 @@ func (u usecase) stopNodeFromPortal(ctx context.Context) error {
 	u.state.Mutex().Lock()
 	defer u.state.Mutex().Unlock()
 	return u.reset(ctx)
+}
+
+// transitionToReadyAfterRentEnd переводит мерчанта из InRent в Ready после окончания аренды (например, покупатель остановил).
+// Сессия и узел остаются активными, daemon не отключается.
+func (u usecase) transitionToReadyAfterRentEnd() {
+	u.state.SetStatus(state.Ready)
+	u.state.SetRequestID("")
+	u.state.SetRentStartedAt(nil)
+
+	u.sessionHealthCheck.Cancel()
+	u.sessionStatusHTTPCheck.Cancel()
 }
 
 func (u usecase) reset(ctx context.Context) error {

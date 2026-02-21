@@ -39,6 +39,8 @@ type Usecase interface {
 
 	StopRequest(ctx context.Context, reason string) error
 	StopEvent(ctx context.Context, requestID string) error
+	// TransitionToReadyAfterRentEnd переводит мерчанта из InRent в Ready при получении share-p2p-stop (аренда завершена покупателем, сессия остаётся активной).
+	TransitionToReadyAfterRentEnd(ctx context.Context, sessionID string) error
 
 	// StartMerchantNodeCheckLoop запускает фоновую проверку «узел ещё в списке активных» (для Ready и InRent). Вызывается из rent.Init().
 	StartMerchantNodeCheckLoop(ctx context.Context)
@@ -212,9 +214,18 @@ func (u usecase) StatusCheckLoop(ctx context.Context) {
 		_ = resp.Body.Close()
 
 		if resp.StatusCode == http.StatusNotFound {
-			log.Infof("session [%s] no longer active (HTTP 404), stopping", sessionID)
-			if err := u.StopRequest(context.Background(), "session no longer active (HTTP check)"); err != nil {
-				log.Errorf("failed to stop after 404: %s", err)
+			// 404 по /status/rent/merchant/ = активной аренды нет (покупатель остановил). Переводим в Ready, не в Disabled.
+			u.state.Mutex().Lock()
+			if u.state.GetStatus() == state.InRent {
+				u.transitionToReadyAfterRentEnd()
+				u.state.Mutex().Unlock()
+				log.Infof("session [%s] rent ended (HTTP 404), merchant ready for next rent", sessionID)
+			} else {
+				u.state.Mutex().Unlock()
+				log.Infof("session [%s] no longer active (HTTP 404), stopping", sessionID)
+				if err := u.StopRequest(context.Background(), "session no longer active (HTTP check)"); err != nil {
+					log.Errorf("failed to stop after 404: %s", err)
+				}
 			}
 			return
 		}
