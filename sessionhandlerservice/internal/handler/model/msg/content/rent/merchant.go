@@ -28,6 +28,12 @@ type TemplateMerchant struct {
 	Volumes []string               `json:"volumes"`
 	UseGPU  bool                   `json:"use_gpu"`
 
+	// Minimum requirements for provider (to filter who can run this template)
+	MinCPU                int32    `json:"min_cpu,omitempty"`
+	MinRAMBytes            uint64   `json:"min_ram_bytes,omitempty"`
+	MinStorageBytes        uint64   `json:"min_storage_bytes,omitempty"`
+	MinVolumeStorageBytes  []uint64 `json:"min_volume_storage_bytes,omitempty"`
+
 	Authentication Authentication `json:"authentication"`
 }
 
@@ -82,6 +88,11 @@ func ConvertToMerchantSettings(req rent.Settings) SettingsMerchant {
 
 			Volumes: req.Template.Template.Volumes,
 			UseGPU:  req.Template.Template.UseGPU,
+
+			MinCPU:               req.Template.Template.MinCPU,
+			MinRAMBytes:          req.Template.Template.MinRAMBytes,
+			MinStorageBytes:      req.Template.Template.MinStorageBytes,
+			MinVolumeStorageBytes: req.Template.Template.MinVolumeStorageBytes,
 
 			Authentication: Authentication{
 				Login:    req.Template.Authentication.Login,

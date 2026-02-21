@@ -24,6 +24,12 @@ type Template struct {
 	Envs      []Env
 	Volumes   []string
 	UseGPU    bool
+
+	// Minimum requirements for provider (to filter who can run this template)
+	MinCPU                int32
+	MinRAMBytes           uint64
+	MinStorageBytes       uint64
+	MinVolumeStorageBytes []uint64 // same order as Volumes
 }
 
 type Env struct {

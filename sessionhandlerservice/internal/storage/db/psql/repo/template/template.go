@@ -46,9 +46,11 @@ func (r repo) Get(ctx context.Context, id string) (rent.Template, error) {
 	query := `SELECT 
     			    title, type, description, short_description,
     			    version, container_image_name, container_image_tag,
-    			    ports, envs, volumes, use_gpu
+    			    ports, envs, volumes, use_gpu,
+    			    min_cpu, min_ram_bytes, min_storage_bytes, min_volume_storage_bytes
 			  FROM templates_template_info WHERE template_id = $1`
 
+	var minVolumeStorage []int64
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
@@ -57,12 +59,8 @@ func (r repo) Get(ctx context.Context, id string) (rent.Template, error) {
 		&result.Title, &result.Type, &result.Description, &result.ShortDescription,
 		&result.Version, &result.ImageName, &result.ImageTag,
 		&pqPorts, &pqEnvs, &pqVolumes, &result.UseGPU,
+		&result.MinCPU, &result.MinRAMBytes, &result.MinStorageBytes, pq.Array(&minVolumeStorage),
 	)
-
-	result.Ports = pqArrayToPorts(pqPorts)
-	result.Envs = pqArrayToEnvs(pqEnvs)
-	result.Volumes = pqArrayToSlice(pqVolumes)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return rent.Template{}, ErrTemplateNotFound
@@ -70,6 +68,11 @@ func (r repo) Get(ctx context.Context, id string) (rent.Template, error) {
 
 		return rent.Template{}, err
 	}
+
+	result.MinVolumeStorageBytes = int64SliceToUint64(minVolumeStorage)
+	result.Ports = pqArrayToPorts(pqPorts)
+	result.Envs = pqArrayToEnvs(pqEnvs)
+	result.Volumes = pqArrayToSlice(pqVolumes)
 
 	return result, nil
 }
@@ -79,7 +82,8 @@ func (r repo) ListAll(ctx context.Context) ([]rent.Template, error) {
 	defer cancel()
 
 	query := `SELECT template_id, title, type, description, short_description,
-	    version, container_image_name, container_image_tag, ports, envs, volumes, use_gpu
+	    version, container_image_name, container_image_tag, ports, envs, volumes, use_gpu,
+	    min_cpu, min_ram_bytes, min_storage_bytes, min_volume_storage_bytes
 	  FROM templates_template_info ORDER BY template_id`
 	rows, err := r.db.QueryxContext(ctx, query)
 	if err != nil {
@@ -91,9 +95,11 @@ func (r repo) ListAll(ctx context.Context) ([]rent.Template, error) {
 	for rows.Next() {
 		var t rent.Template
 		var pqPorts, pqEnvs, pqVolumes pq.ByteaArray
+		var minVolumeStorage []int64
 		err := rows.Scan(
 			&t.ID, &t.Title, &t.Type, &t.Description, &t.ShortDescription,
 			&t.Version, &t.ImageName, &t.ImageTag, &pqPorts, &pqEnvs, &pqVolumes, &t.UseGPU,
+			&t.MinCPU, &t.MinRAMBytes, &t.MinStorageBytes, pq.Array(&minVolumeStorage),
 		)
 		if err != nil {
 			return nil, err
@@ -101,6 +107,7 @@ func (r repo) ListAll(ctx context.Context) ([]rent.Template, error) {
 		t.Ports = pqArrayToPorts(pqPorts)
 		t.Envs = pqArrayToEnvs(pqEnvs)
 		t.Volumes = pqArrayToSlice(pqVolumes)
+		t.MinVolumeStorageBytes = int64SliceToUint64(minVolumeStorage)
 		out = append(out, t)
 	}
 	return out, rows.Err()
@@ -111,8 +118,9 @@ func (r repo) Create(ctx context.Context, t rent.Template) error {
 	defer cancel()
 	query := `INSERT INTO templates_template_info (
 		template_id, title, type, description, short_description,
-		version, container_image_name, container_image_tag, ports, envs, volumes, use_gpu
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+		version, container_image_name, container_image_tag, ports, envs, volumes, use_gpu,
+		min_cpu, min_ram_bytes, min_storage_bytes, min_volume_storage_bytes
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 	_, err := r.db.ExecContext(ctx, query,
 		t.ID, t.Title, t.Type, t.Description, t.ShortDescription,
 		t.Version, t.ImageName, t.ImageTag,
@@ -120,22 +128,25 @@ func (r repo) Create(ctx context.Context, t rent.Template) error {
 		pq.StringArray(util.ArrayInitializer(parser.ArrayToJSON(t.Envs))),
 		pq.StringArray(util.ArrayInitializer(t.Volumes)),
 		t.UseGPU,
+		t.MinCPU, t.MinRAMBytes, t.MinStorageBytes, pq.Array(uint64SliceToInt64(t.MinVolumeStorageBytes)),
 	)
 	return err
 }
 
-func (r repo) Update(ctx context.Context, id string, title, type_, description, shortDescription, version, imageName, imageTag string, useGPU bool, ports []rent.Port, envs []rent.Env, volumes []string) error {
+func (r repo) Update(ctx context.Context, id string, title, type_, description, shortDescription, version, imageName, imageTag string, useGPU bool, ports []rent.Port, envs []rent.Env, volumes []string, minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) error {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	query := `UPDATE templates_template_info SET
 		title = $2, type = $3, description = $4, short_description = $5,
 		version = $6, container_image_name = $7, container_image_tag = $8, use_gpu = $9,
-		ports = $10, envs = $11, volumes = $12
+		ports = $10, envs = $11, volumes = $12,
+		min_cpu = $13, min_ram_bytes = $14, min_storage_bytes = $15, min_volume_storage_bytes = $16
 		WHERE template_id = $1`
 	_, err := r.db.ExecContext(ctx, query, id, title, type_, description, shortDescription, version, imageName, imageTag, useGPU,
 		pq.StringArray(util.ArrayInitializer(parser.ArrayToJSON(ports))),
 		pq.StringArray(util.ArrayInitializer(parser.ArrayToJSON(envs))),
 		pq.StringArray(util.ArrayInitializer(volumes)),
+		minCPU, minRAMBytes, minStorageBytes, pq.Array(uint64SliceToInt64(minVolumeStorageBytes)),
 	)
 	return err
 }
@@ -180,4 +191,28 @@ func pqArrayToEnvs(pqArray pq.ByteaArray) []rent.Env {
 	}
 
 	return result
+}
+
+func int64SliceToUint64(s []int64) []uint64 {
+	out := make([]uint64, len(s))
+	for i, v := range s {
+		if v < 0 {
+			out[i] = 0
+		} else {
+			out[i] = uint64(v)
+		}
+	}
+	return out
+}
+
+func uint64SliceToInt64(s []uint64) []int64 {
+	out := make([]int64, len(s))
+	for i, v := range s {
+		if v > 1<<63-1 {
+			out[i] = 1<<63 - 1
+		} else {
+			out[i] = int64(v)
+		}
+	}
+	return out
 }

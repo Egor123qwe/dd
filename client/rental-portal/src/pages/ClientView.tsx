@@ -71,6 +71,51 @@ function storageToGb(kb: number): number {
   return kb / (1024 * 1024)
 }
 
+/** Результат проверки: может ли поставщик запустить шаблон. */
+type TemplateCompatibility = { canRun: boolean; reason?: string }
+
+/**
+ * Проверяет, хватает ли у поставщика ресурсов для шаблона (RAM, CPU, GPU, Storage).
+ * Данные поставщика: RAM и Storage в KB, CPU — число доступных ядер.
+ */
+function canMerchantRunTemplate(
+  details: MerchantDetails | null | undefined,
+  t: TemplateInfo
+): TemplateCompatibility {
+  if (!details) return { canRun: true }
+
+  const minCpu = t.min_cpu ?? 0
+  const minRamBytes = t.min_ram_bytes ?? 0
+  const minStorageBytes = t.min_storage_bytes ?? 0
+  const minVolumeBytes = (t.min_volume_storage_bytes ?? []).reduce((a, b) => a + b, 0)
+  const needStorageBytes = minStorageBytes + minVolumeBytes
+  const needGpu = !!t.use_gpu
+
+  const merchantCpu = details.cpus?.reduce((s, c) => s + (c.available ?? 0), 0) ?? 0
+  const merchantRamBytes = (details.available_ram ?? 0) * 1024
+  const merchantStorageBytes =
+    (details.storages?.reduce((s, st) => s + (st.available ?? 0), 0) ?? 0) * 1024
+  const hasGpu = !!(details.gpus && details.gpus.length > 0)
+
+  if (minCpu > 0 && merchantCpu < minCpu) {
+    return { canRun: false, reason: `Не хватает CPU: нужно ${minCpu} ядер, доступно ${merchantCpu}` }
+  }
+  if (minRamBytes > 0 && merchantRamBytes < minRamBytes) {
+    const needGb = (minRamBytes / (1024 ** 3)).toFixed(1)
+    const haveGb = (merchantRamBytes / (1024 ** 3)).toFixed(1)
+    return { canRun: false, reason: `Не хватает RAM: нужно ${needGb} ГБ, доступно ${haveGb} ГБ` }
+  }
+  if (needGpu && !hasGpu) {
+    return { canRun: false, reason: 'Шаблон требует GPU, у поставщика нет GPU' }
+  }
+  if (needStorageBytes > 0 && merchantStorageBytes < needStorageBytes) {
+    const needGb = (needStorageBytes / (1024 ** 3)).toFixed(1)
+    const haveGb = (merchantStorageBytes / (1024 ** 3)).toFixed(1)
+    return { canRun: false, reason: `Не хватает места на диске: нужно ${needGb} ГБ, доступно ${haveGb} ГБ` }
+  }
+  return { canRun: true }
+}
+
 export default function ClientView() {
   const [activeRent, setActiveRent] = useState<ActiveRent | null | undefined>(undefined)
   const [activeError, setActiveError] = useState<string | null>(null)
@@ -107,6 +152,7 @@ export default function ClientView() {
   const [selectedHistoryDay, setSelectedHistoryDay] = useState<string | null>(null)
   const [historyTemplatePreview, setHistoryTemplatePreview] = useState<{ item: RentHistoryItem; templateInfo: TemplateInfo | null } | null>(null)
   const [historyTemplatePreviewLoading, setHistoryTemplatePreviewLoading] = useState(false)
+  const [showOnlyAvailableTemplates, setShowOnlyAvailableTemplates] = useState(false)
 
   const WS_BASE_URL = (() => {
     if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
@@ -488,6 +534,27 @@ export default function ClientView() {
       .catch(() => setHistoryTemplatePreview((prev) => (prev ? { ...prev, templateInfo: null } : null)))
       .finally(() => setHistoryTemplatePreviewLoading(false))
   }, [])
+
+  const merchantDetails = selectedMerchant?.details ?? null
+  const visibleTemplates = useMemo(() => {
+    if (showOnlyAvailableTemplates && merchantDetails) {
+      return templates.filter((t) => canMerchantRunTemplate(merchantDetails, t).canRun)
+    }
+    return templates
+  }, [templates, merchantDetails, showOnlyAvailableTemplates])
+
+  const selectedTemplateCompatibility = useMemo((): TemplateCompatibility | null => {
+    if (!selectedTemplateId) return null
+    const t = templates.find((x) => x.template_id === selectedTemplateId)
+    if (!t) return null
+    return canMerchantRunTemplate(merchantDetails, t)
+  }, [selectedTemplateId, templates, merchantDetails])
+
+  useEffect(() => {
+    if (showOnlyAvailableTemplates && selectedTemplateId && !visibleTemplates.some((t) => t.template_id === selectedTemplateId)) {
+      setSelectedTemplateId(null)
+    }
+  }, [showOnlyAvailableTemplates, selectedTemplateId, visibleTemplates])
 
   return (
     <div className={styles.wrap}>
@@ -1057,38 +1124,61 @@ export default function ClientView() {
                           Шаблон — это готовый рабочий стол с системой и программами. Выберите один вариант и нажмите «Запуск».
                         </p>
                       </div>
+                      <div className={styles.templateFilterSwitchRow}>
+                        <span className={styles.templateFilterSwitchLabel}>Показывать только доступные шаблоны</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={showOnlyAvailableTemplates}
+                          className={styles.templateFilterSwitch + (showOnlyAvailableTemplates ? ' ' + styles.templateFilterSwitchOn : '')}
+                          onClick={() => setShowOnlyAvailableTemplates((v) => !v)}
+                        >
+                          <span className={styles.templateFilterSwitchThumb} />
+                        </button>
+                      </div>
                       {templatesLoading && <p className={styles.muted}>Загрузка списка шаблонов…</p>}
                       {templatesError && <div className={styles.errorBlock}>{templatesError}</div>}
                       {!templatesLoading && !templatesError && templates.length === 0 && (
                         <p className={styles.muted}>Нет доступных шаблонов у этого поставщика.</p>
                       )}
-                      {!templatesLoading && templates.length > 0 && (
+                      {!templatesLoading && templates.length > 0 && visibleTemplates.length === 0 && showOnlyAvailableTemplates && (
+                        <p className={styles.muted}>Нет шаблонов, которые этот поставщик может запустить.</p>
+                      )}
+                      {!templatesLoading && templates.length > 0 && visibleTemplates.length > 0 && (
                         <div className={styles.templateGrid}>
-                          {templates.map((t) => (
-                            <label
-                              key={t.template_id}
-                              className={`${styles.templateCard} ${selectedTemplateId === t.template_id ? styles.templateCardSelected : ''}`}
-                            >
-                              <input
-                                type="radio"
-                                name="template"
-                                checked={selectedTemplateId === t.template_id}
-                                onChange={() => setSelectedTemplateId(t.template_id)}
-                                className={styles.templateCardRadio}
-                              />
-                              {t.short_description && (
-                                <div className={styles.templateCardImage}>
-                                  <img src={t.short_description} alt={t.title || t.template_id} />
-                                </div>
-                              )}
-                              <div className={styles.templateCardContent}>
-                                <h4 className={styles.templateCardTitle}>{t.title || t.template_id}</h4>
-                                {t.description && (
-                                  <p className={styles.templateCardDescription}>{t.description}</p>
+                          {visibleTemplates.map((t) => {
+                            const compat = canMerchantRunTemplate(merchantDetails, t)
+                            const disabled = !compat.canRun
+                            return (
+                              <label
+                                key={t.template_id}
+                                className={`${styles.templateCard} ${selectedTemplateId === t.template_id ? styles.templateCardSelected : ''} ${disabled ? styles.templateCardDisabled : ''}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="template"
+                                  checked={selectedTemplateId === t.template_id}
+                                  onChange={() => !disabled && setSelectedTemplateId(t.template_id)}
+                                  disabled={disabled}
+                                  className={styles.templateCardRadio}
+                                />
+                                {t.short_description && (
+                                  <div className={styles.templateCardImage}>
+                                    <img src={t.short_description} alt={t.title || t.template_id} />
+                                  </div>
                                 )}
-                              </div>
-                            </label>
-                          ))}
+                                <div className={styles.templateCardContent}>
+                                  <h4 className={styles.templateCardTitle}>{t.title || t.template_id}</h4>
+                                  {t.description && (
+                                    <p className={styles.templateCardDescription}>{t.description}</p>
+                                  )}
+                                  {disabled && compat.reason && (
+                                    <p className={styles.templateCardUnavailableReason}>{compat.reason}</p>
+                                  )}
+                                </div>
+                              </label>
+                            )
+                          })}
                         </div>
                       )}
                       <div className={styles.buttons} style={{ marginTop: '1rem' }}>
@@ -1096,7 +1186,12 @@ export default function ClientView() {
                           type="button"
                           className={styles.primaryBtn}
                           onClick={handleStartSession}
-                          disabled={startSubmitting || templates.length === 0 || !selectedTemplateId}
+                          disabled={
+                            startSubmitting ||
+                            templates.length === 0 ||
+                            !selectedTemplateId ||
+                            (selectedTemplateCompatibility !== null && !selectedTemplateCompatibility.canRun)
+                          }
                         >
                           {startSubmitting ? 'Запуск…' : 'Запуск'}
                         </button>

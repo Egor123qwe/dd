@@ -66,18 +66,22 @@ type envResp struct {
 }
 
 type templateInfoResp struct {
-	TemplateID       string     `json:"template_id"`
-	Title            string     `json:"title"`
-	Type             string     `json:"type"`
-	Description      string     `json:"description"`
-	ShortDescription string     `json:"short_description"`
-	Version          string     `json:"version"`
-	ContainerImage   string     `json:"container_image_name"`
-	ImageTag         string     `json:"container_image_tag"`
-	Ports            []portResp `json:"ports"`
-	Envs             []envResp  `json:"envs"`
-	Volumes          []string   `json:"volumes"`
-	UseGPU           bool       `json:"use_gpu"`
+	TemplateID             string   `json:"template_id"`
+	Title                  string   `json:"title"`
+	Type                   string   `json:"type"`
+	Description            string   `json:"description"`
+	ShortDescription       string   `json:"short_description"`
+	Version                string   `json:"version"`
+	ContainerImage         string   `json:"container_image_name"`
+	ImageTag               string   `json:"container_image_tag"`
+	Ports                  []portResp `json:"ports"`
+	Envs                   []envResp  `json:"envs"`
+	Volumes                []string `json:"volumes"`
+	UseGPU                 bool     `json:"use_gpu"`
+	MinCPU                 int32    `json:"min_cpu,omitempty"`
+	MinRAMBytes            uint64   `json:"min_ram_bytes,omitempty"`
+	MinStorageBytes        uint64   `json:"min_storage_bytes,omitempty"`
+	MinVolumeStorageBytes  []uint64 `json:"min_volume_storage_bytes,omitempty"`
 }
 
 func templateToResp(t rent.Template) templateInfoResp {
@@ -90,18 +94,22 @@ func templateToResp(t rent.Template) templateInfoResp {
 		envs = append(envs, envResp{Key: e.Key, Value: e.Value, Type: e.Type})
 	}
 	return templateInfoResp{
-		TemplateID:       t.ID,
-		Title:            t.Title,
-		Type:             t.Type,
-		Description:      t.Description,
-		ShortDescription: t.ShortDescription,
-		Version:          t.Version,
-		ContainerImage:   t.ImageName,
-		ImageTag:         t.ImageTag,
-		Ports:            ports,
-		Envs:             envs,
-		Volumes:          t.Volumes,
-		UseGPU:           t.UseGPU,
+		TemplateID:            t.ID,
+		Title:                 t.Title,
+		Type:                  t.Type,
+		Description:           t.Description,
+		ShortDescription:      t.ShortDescription,
+		Version:               t.Version,
+		ContainerImage:        t.ImageName,
+		ImageTag:              t.ImageTag,
+		Ports:                 ports,
+		Envs:                  envs,
+		Volumes:               t.Volumes,
+		UseGPU:                t.UseGPU,
+		MinCPU:                t.MinCPU,
+		MinRAMBytes:           t.MinRAMBytes,
+		MinStorageBytes:       t.MinStorageBytes,
+		MinVolumeStorageBytes: t.MinVolumeStorageBytes,
 	}
 }
 
@@ -143,15 +151,19 @@ type adminEnvPayload struct {
 }
 
 type adminTemplatePayload struct {
-	Title            string               `json:"title"`
-	Description      string               `json:"description"`
-	ShortDescription string               `json:"short_description"`
-	ContainerImage   string               `json:"container_image_name"`
-	ImageTag         string               `json:"container_image_tag"`
-	Ports            []adminPortPayload   `json:"ports"`
-	Envs             []adminEnvPayload     `json:"envs"`
-	Volumes          []string             `json:"volumes"`
-	UseGPU           bool                 `json:"use_gpu"`
+	Title                  string               `json:"title"`
+	Description            string               `json:"description"`
+	ShortDescription       string               `json:"short_description"`
+	ContainerImage         string               `json:"container_image_name"`
+	ImageTag               string               `json:"container_image_tag"`
+	Ports                  []adminPortPayload   `json:"ports"`
+	Envs                   []adminEnvPayload    `json:"envs"`
+	Volumes                []string             `json:"volumes"`
+	UseGPU                 bool                 `json:"use_gpu"`
+	MinCPU                 *int32               `json:"min_cpu,omitempty"`
+	MinRAMBytes            *uint64              `json:"min_ram_bytes,omitempty"`
+	MinStorageBytes        *uint64              `json:"min_storage_bytes,omitempty"`
+	MinVolumeStorageBytes  []uint64             `json:"min_volume_storage_bytes,omitempty"`
 }
 
 func adminPayloadToPorts(p []adminPortPayload) []rent.Port {
@@ -168,6 +180,22 @@ func adminPayloadToEnvs(p []adminEnvPayload) []rent.Env {
 		out = append(out, rent.Env{Key: x.Key, Value: x.Value, Type: x.Type})
 	}
 	return out
+}
+
+func adminMinRequirementsFromPayload(body adminTemplatePayload) (minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) {
+	if body.MinCPU != nil {
+		minCPU = *body.MinCPU
+	}
+	if body.MinRAMBytes != nil {
+		minRAMBytes = *body.MinRAMBytes
+	}
+	if body.MinStorageBytes != nil {
+		minStorageBytes = *body.MinStorageBytes
+	}
+	if len(body.MinVolumeStorageBytes) > 0 {
+		minVolumeStorageBytes = body.MinVolumeStorageBytes
+	}
+	return minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes
 }
 
 func (s *server) handleAdminTemplatesCreate(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +216,8 @@ func (s *server) handleAdminTemplatesCreate(w http.ResponseWriter, r *http.Reque
 	if volumes == nil {
 		volumes = []string{}
 	}
-	t, err := s.srv.CreateTemplate(ctx, body.Title, body.Description, body.ShortDescription, body.ContainerImage, body.ImageTag, body.UseGPU, ports, envs, volumes)
+	minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes := adminMinRequirementsFromPayload(body)
+	t, err := s.srv.CreateTemplate(ctx, body.Title, body.Description, body.ShortDescription, body.ContainerImage, body.ImageTag, body.UseGPU, ports, envs, volumes, minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes)
 	if err != nil {
 		logHTTP.Errorf("create template: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -235,7 +264,8 @@ func (s *server) handleAdminTemplatesByID(w http.ResponseWriter, r *http.Request
 		if volumes == nil {
 			volumes = []string{}
 		}
-		if err := s.srv.UpdateTemplate(ctx, id, body.Title, body.Description, body.ShortDescription, body.ContainerImage, body.ImageTag, body.UseGPU, ports, envs, volumes); err != nil {
+		minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes := adminMinRequirementsFromPayload(body)
+		if err := s.srv.UpdateTemplate(ctx, id, body.Title, body.Description, body.ShortDescription, body.ContainerImage, body.ImageTag, body.UseGPU, ports, envs, volumes, minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes); err != nil {
 			logHTTP.Errorf("update template: %v", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return

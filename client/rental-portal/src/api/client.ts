@@ -432,6 +432,10 @@ export type TemplateInfo = {
   envs?: TemplateEnv[];
   volumes?: string[];
   use_gpu?: boolean;
+  min_cpu?: number;
+  min_ram_bytes?: number;
+  min_storage_bytes?: number;
+  min_volume_storage_bytes?: number[];
 };
 
 /** Тело запроса создания/обновления шаблона (админ). Тип и версия на бэкенде всегда proxy / 1.0. */
@@ -445,6 +449,10 @@ export type AdminTemplatePayload = {
   envs?: TemplateEnv[];
   volumes?: string[];
   use_gpu?: boolean;
+  min_cpu?: number;
+  min_ram_bytes?: number;
+  min_storage_bytes?: number;
+  min_volume_storage_bytes?: number[];
 };
 
 export type MerchantDetails = {

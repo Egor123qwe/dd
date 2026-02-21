@@ -16,8 +16,8 @@ type Service interface {
 	Rent() Rent
 	ListTemplates(ctx context.Context) ([]rentModel.Template, error)
 	GetTemplate(ctx context.Context, id string) (rentModel.Template, error)
-	CreateTemplate(ctx context.Context, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string) (rentModel.Template, error)
-	UpdateTemplate(ctx context.Context, id string, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string) error
+	CreateTemplate(ctx context.Context, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string, minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) (rentModel.Template, error)
+	UpdateTemplate(ctx context.Context, id string, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string, minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) error
 	GetRentClientID(ctx context.Context, requestID string) (string, error)
 }
 
@@ -65,24 +65,28 @@ func generateID() (string, error) {
 	return hex.EncodeToString(b[:]), nil
 }
 
-func (s *service) CreateTemplate(ctx context.Context, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string) (rentModel.Template, error) {
+func (s *service) CreateTemplate(ctx context.Context, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string, minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) (rentModel.Template, error) {
 	id, err := generateID()
 	if err != nil {
 		return rentModel.Template{}, err
 	}
 	t := rentModel.Template{
-		ID:               id,
-		Title:            title,
-		Type:             "proxy",
-		Description:      description,
-		ShortDescription: shortDescription,
-		Version:          "1.0",
-		ImageName:        imageName,
-		ImageTag:         imageTag,
-		Ports:            ports,
-		Envs:             envs,
-		Volumes:          volumes,
-		UseGPU:           useGPU,
+		ID:                     id,
+		Title:                  title,
+		Type:                   "proxy",
+		Description:            description,
+		ShortDescription:       shortDescription,
+		Version:                "1.0",
+		ImageName:              imageName,
+		ImageTag:               imageTag,
+		Ports:                  ports,
+		Envs:                   envs,
+		Volumes:                volumes,
+		UseGPU:                 useGPU,
+		MinCPU:                 minCPU,
+		MinRAMBytes:            minRAMBytes,
+		MinStorageBytes:        minStorageBytes,
+		MinVolumeStorageBytes:   minVolumeStorageBytes,
 	}
 	if err := s.storage.Template().Create(ctx, t); err != nil {
 		return rentModel.Template{}, err
@@ -90,8 +94,8 @@ func (s *service) CreateTemplate(ctx context.Context, title, description, shortD
 	return t, nil
 }
 
-func (s *service) UpdateTemplate(ctx context.Context, id string, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string) error {
-	return s.storage.Template().Update(ctx, id, title, "proxy", description, shortDescription, "1.0", imageName, imageTag, useGPU, ports, envs, volumes)
+func (s *service) UpdateTemplate(ctx context.Context, id string, title, description, shortDescription, imageName, imageTag string, useGPU bool, ports []rentModel.Port, envs []rentModel.Env, volumes []string, minCPU int32, minRAMBytes, minStorageBytes uint64, minVolumeStorageBytes []uint64) error {
+	return s.storage.Template().Update(ctx, id, title, "proxy", description, shortDescription, "1.0", imageName, imageTag, useGPU, ports, envs, volumes, minCPU, minRAMBytes, minStorageBytes, minVolumeStorageBytes)
 }
 
 func (s *service) GetRentClientID(ctx context.Context, requestID string) (string, error) {

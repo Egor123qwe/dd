@@ -17,6 +17,13 @@ type RangeDays = (typeof RANGE_OPTIONS)[number]
 
 const BUSINESS_FEE_PERCENT = 10
 
+/** Минимальные допустимые значения требований к ресурсам поставщика (обязательные поля). */
+const MIN_REQ_CPU = 1
+const MIN_REQ_RAM_GB = 0.5
+const MIN_REQ_STORAGE_GB = 1
+/** Минимальный объём тома (ГБ). */
+const MIN_VOLUME_STORAGE_GB = 0.5
+
 function toLocalDateKey(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -99,6 +106,10 @@ export default function AdminView() {
   const [formPorts, setFormPorts] = useState<TemplatePort[]>([])
   const [formEnvs, setFormEnvs] = useState<TemplateEnv[]>([])
   const [formVolumes, setFormVolumes] = useState<string[]>([])
+  const [formMinCpu, setFormMinCpu] = useState<number>(0)
+  const [formMinRamGb, setFormMinRamGb] = useState<number>(0)
+  const [formMinStorageGb, setFormMinStorageGb] = useState<number>(0)
+  const [formMinVolumeStorageGb, setFormMinVolumeStorageGb] = useState<number[]>([])
   const [formSubmitError, setFormSubmitError] = useState<string | null>(null)
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [templateEditLoading, setTemplateEditLoading] = useState(false)
@@ -168,6 +179,10 @@ export default function AdminView() {
       setFormPorts([])
       setFormEnvs([])
       setFormVolumes([])
+      setFormMinCpu(MIN_REQ_CPU)
+      setFormMinRamGb(MIN_REQ_RAM_GB)
+      setFormMinStorageGb(MIN_REQ_STORAGE_GB)
+      setFormMinVolumeStorageGb([])
       setTemplateEditLoading(false)
       return
     }
@@ -183,9 +198,19 @@ export default function AdminView() {
         setFormContainerImageName(t.container_image_name ?? '')
         setFormContainerImageTag(t.container_image_tag ?? '')
         setFormUseGpu(!!t.use_gpu)
-        setFormPorts(Array.isArray(t.ports) ? t.ports.map((p) => ({ auth: p.auth, port: p.port, type: p.type, title: p.title })) : [])
+        setFormPorts(Array.isArray(t.ports) ? t.ports.map((p) => ({ auth: p.auth, port: p.port, type: 'http', title: p.title })) : [])
         setFormEnvs(Array.isArray(t.envs) ? t.envs.map((e) => ({ key: e.key, value: e.value, type: e.type })) : [])
         setFormVolumes(Array.isArray(t.volumes) ? [...t.volumes] : [])
+        setFormMinCpu(Math.max(MIN_REQ_CPU, t.min_cpu ?? 0))
+        setFormMinRamGb(Math.max(MIN_REQ_RAM_GB, (t.min_ram_bytes ?? 0) / 1024 ** 3))
+        setFormMinStorageGb(Math.max(MIN_REQ_STORAGE_GB, (t.min_storage_bytes ?? 0) / 1024 ** 3))
+        const vols = Array.isArray(t.volumes) ? t.volumes : []
+        const volGb = Array.isArray(t.min_volume_storage_bytes)
+          ? t.min_volume_storage_bytes.map((b) => Math.max(MIN_VOLUME_STORAGE_GB, b / 1024 ** 3))
+          : []
+        const padded = [...volGb]
+        while (padded.length < vols.length) padded.push(MIN_VOLUME_STORAGE_GB)
+        setFormMinVolumeStorageGb(padded.slice(0, vols.length))
       })
       .catch(() => {
         if (!cancelled) setFormSubmitError('Не удалось загрузить шаблон')
@@ -211,11 +236,26 @@ export default function AdminView() {
     async (e: React.FormEvent) => {
       e.preventDefault()
       setFormSubmitError(null)
+
+      const cpuOk = formMinCpu >= MIN_REQ_CPU
+      const ramOk = formMinRamGb >= MIN_REQ_RAM_GB
+      const storageOk = formMinStorageGb >= MIN_REQ_STORAGE_GB
+      if (!cpuOk || !ramOk || !storageOk) {
+        setFormSubmitError(
+          `Укажите требования к ресурсам: CPU не менее ${MIN_REQ_CPU} ядра, RAM не менее ${MIN_REQ_RAM_GB} ГБ, Storage не менее ${MIN_REQ_STORAGE_GB} ГБ.`
+        )
+        return
+      }
+
       setFormSubmitting(true)
       try {
         const portsFiltered = formPorts.filter((p) => p.port != null)
         const envsFiltered = formEnvs.filter((e) => (e.key ?? '').trim() !== '')
         const volumesFiltered = formVolumes.filter((v) => v.trim() !== '')
+        const minVolumeBytes =
+          formMinVolumeStorageGb.length > 0
+            ? formMinVolumeStorageGb.slice(0, volumesFiltered.length).map((gb) => Math.round(gb * 1024 ** 3))
+            : undefined
         const payload = {
           title: formTitle.trim() || undefined,
           description: formDescription.trim() || undefined,
@@ -223,9 +263,13 @@ export default function AdminView() {
           container_image_name: formContainerImageName.trim() || undefined,
           container_image_tag: formContainerImageTag.trim() || undefined,
           use_gpu: formUseGpu,
-          ports: portsFiltered.length ? portsFiltered : undefined,
+          ports: portsFiltered.length ? portsFiltered.map((p) => ({ ...p, type: 'http' })) : undefined,
           envs: envsFiltered.length ? envsFiltered : undefined,
           volumes: volumesFiltered.length ? volumesFiltered : undefined,
+          min_cpu: formMinCpu,
+          min_ram_bytes: Math.round(formMinRamGb * 1024 ** 3),
+          min_storage_bytes: Math.round(formMinStorageGb * 1024 ** 3),
+          min_volume_storage_bytes: minVolumeBytes?.some((b) => b > 0) ? minVolumeBytes : undefined,
         }
         if (templateEditModal.mode === 'edit' && templateEditModal.templateId) {
           await api.admin.updateTemplate(templateEditModal.templateId, payload)
@@ -250,6 +294,10 @@ export default function AdminView() {
       formPorts,
       formEnvs,
       formVolumes,
+      formMinCpu,
+      formMinRamGb,
+      formMinStorageGb,
+      formMinVolumeStorageGb,
       templateEditModal.mode,
       templateEditModal.templateId,
       loadSystemTemplates,
@@ -893,22 +941,10 @@ export default function AdminView() {
                       />
                     </div>
                   </div>
-                  <div className={styles.formSwitchRow}>
-                    <span className={styles.formLabel}>Использовать GPU</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={formUseGpu}
-                      className={styles.formSwitch + (formUseGpu ? ' ' + styles.formSwitchOn : '')}
-                      onClick={() => setFormUseGpu(!formUseGpu)}
-                    >
-                      <span className={styles.formSwitchThumb} />
-                    </button>
-                  </div>
                 </div>
 
                 <div className={styles.formSection}>
-                  <h4 className={styles.formSectionTitle}>Порты, переменные и тома</h4>
+                  <h4 className={styles.formSectionTitle}>Технические настройки</h4>
                   <div className={styles.formListBlock}>
                     <span className={styles.formLabel}>Порты</span>
                     {formPorts.map((p, i) => (
@@ -923,13 +959,7 @@ export default function AdminView() {
                             setFormPorts((prev) => prev.map((x, j) => (j === i ? { ...x, port: v } : x)))
                           }}
                         />
-                        <input
-                          type="text"
-                          className={styles.formInputSmall}
-                          placeholder="Тип (http/tcp)"
-                          value={p.type ?? ''}
-                          onChange={(e) => setFormPorts((prev) => prev.map((x, j) => (j === i ? { ...x, type: e.target.value } : x)))}
-                        />
+                        <span className={styles.formPortTypeFixed} title="Тип порта всегда http">http</span>
                         <input
                           type="text"
                           className={styles.formInputFlex}
@@ -950,7 +980,7 @@ export default function AdminView() {
                         </button>
                       </div>
                     ))}
-                    <button type="button" className={styles.formListAdd} onClick={() => setFormPorts((prev) => [...prev, { port: undefined, type: 'http', title: '' }])}>
+                    <button type="button" className={styles.formListAdd} onClick={() => setFormPorts((prev) => [...prev, { port: undefined, type: 'http', title: '', auth: false }])}>
                       + Добавить порт
                     </button>
                   </div>
@@ -982,7 +1012,14 @@ export default function AdminView() {
                     </button>
                   </div>
                   <div className={styles.formListBlock}>
-                    <span className={styles.formLabel}>Тома (пути)</span>
+                    <span className={styles.formLabel}>Тома (пути и минимальный объём)</span>
+                    {formVolumes.length > 0 && (
+                      <div className={styles.formVolumesHeader}>
+                        <span className={styles.formVolumesHeaderPath}>Путь в контейнере</span>
+                        <span className={styles.formVolumesHeaderSize}>Мин. объём (ГБ)</span>
+                        <span className={styles.formVolumesHeaderAction} aria-hidden> </span>
+                      </div>
+                    )}
                     {formVolumes.map((v, i) => (
                       <div key={i} className={styles.formListRow}>
                         <input
@@ -991,15 +1028,90 @@ export default function AdminView() {
                           placeholder="/path/inside/container"
                           value={v}
                           onChange={(e) => setFormVolumes((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))}
+                          aria-label={`Путь тома ${i + 1}`}
                         />
-                        <button type="button" className={styles.formListRemove} onClick={() => setFormVolumes((prev) => prev.filter((_, j) => j !== i))} aria-label="Удалить том">
+                        <label className={styles.formVolumeSizeLabel}>
+                          <input
+                            type="number"
+                            min={MIN_VOLUME_STORAGE_GB}
+                            step={0.5}
+                            className={styles.formInputNum}
+                            placeholder={String(MIN_VOLUME_STORAGE_GB)}
+                            value={formMinVolumeStorageGb[i] ?? ''}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value)
+                              setFormMinVolumeStorageGb((prev) => {
+                                const next = [...(prev ?? [])]
+                                while (next.length <= i) next.push(MIN_VOLUME_STORAGE_GB)
+                                next[i] = Number.isFinite(val) ? Math.max(MIN_VOLUME_STORAGE_GB, val) : MIN_VOLUME_STORAGE_GB
+                                return next
+                              })
+                            }}
+                          />
+                          <span className={styles.formVolumeSizeHint}>ГБ</span>
+                        </label>
+                        <button type="button" className={styles.formListRemove} onClick={() => { setFormVolumes((prev) => prev.filter((_, j) => j !== i)); setFormMinVolumeStorageGb((prev) => prev.filter((_, j) => j !== i)) }} aria-label="Удалить том">
                           ×
                         </button>
                       </div>
                     ))}
-                    <button type="button" className={styles.formListAdd} onClick={() => setFormVolumes((prev) => [...prev, ''])}>
+                    <button type="button" className={styles.formListAdd} onClick={() => { setFormVolumes((prev) => [...prev, '']); setFormMinVolumeStorageGb((prev) => [...prev, MIN_VOLUME_STORAGE_GB]) }}>
                       + Добавить том
                     </button>
+                  </div>
+
+                  <div className={styles.formSection}>
+                    <h4 className={styles.formSectionTitle}>Минимальные требования шаблона</h4>
+                    <div className={styles.formMinReqsGrid}>
+                      <label className={styles.formMinReqItem}>
+                        <span className={styles.formMinReqLabel}>CPU (ядер)</span>
+                        <input
+                          type="number"
+                          min={MIN_REQ_CPU}
+                          step={1}
+                          required
+                          value={formMinCpu || ''}
+                          onChange={(e) => setFormMinCpu(Math.max(MIN_REQ_CPU, parseInt(e.target.value, 10) || MIN_REQ_CPU))}
+                          placeholder={String(MIN_REQ_CPU)}
+                        />
+                      </label>
+                      <label className={styles.formMinReqItem}>
+                        <span className={styles.formMinReqLabel}>RAM (ГБ)</span>
+                        <input
+                          type="number"
+                          min={MIN_REQ_RAM_GB}
+                          step={0.5}
+                          required
+                          value={formMinRamGb || ''}
+                          onChange={(e) => setFormMinRamGb(Math.max(MIN_REQ_RAM_GB, parseFloat(e.target.value) || MIN_REQ_RAM_GB))}
+                          placeholder={String(MIN_REQ_RAM_GB)}
+                        />
+                      </label>
+                      <label className={styles.formMinReqItem}>
+                        <span className={styles.formMinReqLabel}>Storage приложения (ГБ)</span>
+                        <input
+                          type="number"
+                          min={MIN_REQ_STORAGE_GB}
+                          step={0.5}
+                          required
+                          value={formMinStorageGb || ''}
+                          onChange={(e) => setFormMinStorageGb(Math.max(MIN_REQ_STORAGE_GB, parseFloat(e.target.value) || MIN_REQ_STORAGE_GB))}
+                          placeholder={String(MIN_REQ_STORAGE_GB)}
+                        />
+                      </label>
+                    </div>
+                    <div className={styles.formSwitchRow}>
+                      <span className={styles.formLabel}>Использует GPU</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={formUseGpu}
+                        className={styles.formSwitch + (formUseGpu ? ' ' + styles.formSwitchOn : '')}
+                        onClick={() => setFormUseGpu(!formUseGpu)}
+                      >
+                        <span className={styles.formSwitchThumb} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 

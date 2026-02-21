@@ -803,6 +803,78 @@
   box-shadow: 0 0 0 3px rgba(125, 207, 255, 0.15);
 }
 
+.templateCardDisabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.templateCardDisabled:hover {
+  transform: none;
+  border-color: var(--border);
+}
+
+.templateCardUnavailableReason {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: rgba(200, 80, 80, 0.15);
+  border-radius: 6px;
+  border-left: 3px solid #c85050;
+}
+
+.templateFilterSwitchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.templateFilterSwitchLabel {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.templateFilterSwitch {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.templateFilterSwitch:hover {
+  border-color: var(--accent);
+}
+
+.templateFilterSwitchOn {
+  background: rgba(125, 207, 255, 0.25);
+  border-color: var(--accent);
+}
+
+.templateFilterSwitchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.15rem;
+  height: calc(1.5rem - 4px);
+  border-radius: 999px;
+  background: var(--text);
+  transition: transform 0.2s ease;
+}
+
+.templateFilterSwitchOn .templateFilterSwitchThumb {
+  transform: translateX(1.35rem);
+  background: var(--accent);
+}
+
 .templateCardRadio {
   position: absolute;
   top: 0.75rem;
