@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/docker/container"
 	volumeModel "gitlab.roy9.ru/roy9/backend/clientside/runtimedaemonv2/internal/model/docker/volume"
@@ -81,6 +82,18 @@ func (s service) Start(ctx context.Context, settings container.Settings) (string
 			CPUs:     settings.Options.CPULimit,
 			Memory:   settings.Options.MemoryLimitBytes,
 			Storage:  containerStorage,
+		}
+		// code-server: отключаем запрос пароля (--auth none)
+		if strings.Contains(template.ImageName, "code-server") {
+			createReq.Cmd = []string{"--auth", "none"}
+		}
+		// nvcr.io/nvidia/pytorch:24.01-py3 — запуск Jupyter (как в docker run ... jupyter notebook --ip=0.0.0.0 --port=8888 ...)
+		if createReq.Image == "nvcr.io/nvidia/pytorch:24.01-py3" {
+			createReq.Cmd = []string{
+				"jupyter", "notebook",
+				"--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root",
+				"--NotebookApp.token=",
+			}
 		}
 
 		containerId, err = s.api.CreateContainer(ctx, createReq)

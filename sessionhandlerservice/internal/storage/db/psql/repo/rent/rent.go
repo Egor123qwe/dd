@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -80,9 +81,74 @@ func (r repo) Get(ctx context.Context, id string) (rentModel.Rent, error) {
 	return modelRent, nil
 }
 
+const varchar255 = 255
+const varchar100 = 100
+
+// checkVarchar255 возвращает ошибку с именем поля и длиной, если s длиннее max.
+func checkVarchar255(field string, s string, max int) error {
+	if len(s) > max {
+		return fmt.Errorf("value too long for column %s: length %d (max %d)", field, len(s), max)
+	}
+	return nil
+}
+
 func (r repo) Create(ctx context.Context, rent rentModel.Rent, configuration rentModel.Settings) (rentModel.Rent, error) {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
+
+	// Проверка длин полей VARCHAR(255)/VARCHAR(100) для явной ошибки при переполнении.
+	t := configuration.Template.Template
+	auth := configuration.Template.Authentication
+	if err := checkVarchar255("template_id", t.ID, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("title", t.Title, varchar100); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("type", t.Type, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	// short_description — колонка TEXT, ограничение не проверяем
+	if err := checkVarchar255("version", t.Version, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("image_name", t.ImageName, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("image_tag", t.ImageTag, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("login", auth.Login, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("password", auth.Password, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("mode", string(configuration.Mode), varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("session_id", rent.SessionID, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("client_id", rent.ClientId, varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if err := checkVarchar255("status", string(rent.Status), varchar255); err != nil {
+		return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+	}
+	if configuration.Network.Piko != nil {
+		if err := checkVarchar255("piko.auth_key", configuration.Network.Piko.AuthKey, varchar255); err != nil {
+			return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+		}
+	}
+	if configuration.Network.Tailscale != nil {
+		if err := checkVarchar255("tailscale.merchant_key", configuration.Network.Tailscale.MerchantAuthKey, varchar255); err != nil {
+			return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+		}
+		if err := checkVarchar255("tailscale.client_key", configuration.Network.Tailscale.ClientAuthKey, varchar255); err != nil {
+			return rentModel.Rent{}, fmt.Errorf("rent create: %w", err)
+		}
+	}
 
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil && !errors.Is(err, sqlt.ErrTxAlreadyStarted) {

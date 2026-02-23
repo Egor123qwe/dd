@@ -58,8 +58,41 @@ docker compose up redpanda-init
 | History                   | 8899  |
 | Machines Aggregate        | 8000  |
 | S3 Storage Processor (gRPC) | 9090 |
+| **Сайт (rental-portal)**  | **3000** |
 
 Если порт занят, в `docker-compose.yml` можно изменить маппинг, например: `"18090:8090"` вместо `"8090:8090"`.
+
+## Тестирование с другого компьютера в локальной сети
+
+Если порты в основном compose привязаны к localhost (`127.0.0.1:PORT:PORT`), с другого ПК в сети к ним не подключиться. Чтобы открыть доступ по LAN:
+
+**1. Запуск с привязкой к всем интерфейсам**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
+```
+
+В `docker-compose.lan.yml` порты userservice (8052) и connectioncoordinatorservice (8090) переопределены на `0.0.0.0`, чтобы к ним можно было обращаться по IP ноутбука из сети.
+
+**2. Вариант А — веб-интерфейс с другого ПК**
+
+- На ноутбуке: поднять compose (с `docker-compose.lan.yml` при необходимости), запустить **merchantclient** (он слушает `:8080` на всех интерфейсах).
+- Узнать IP ноутбука в LAN (macOS: `ipconfig getifaddr en0`, Linux: `hostname -I`).
+- На другом ПК в браузере открыть: `http://<IP_ноутбука>:8080`.
+- Если не открывается — проверить фаервол на ноутбуке (разрешить входящие на порт 8080).
+
+**3. Вариант Б — merchantclient на другом ПК, бэкенд на ноутбуке**
+
+- На ноутбуке: `docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d`.
+- На другом ПК: собрать/скопировать merchantclient и runtimedaemon, запустить с указанием адреса ноутбука:
+
+```bash
+export ROY9_AUTH_SERVICE_URL="http://<IP_ноутбука>:8052"
+export ROY9_CONNECTION_URL="ws://<IP_ноутбука>:8090/api/v1/ws"
+./merchantclient
+```
+
+В браузере на этом же ПК открыть `http://localhost:8080`. Runtimedaemon и Docker должны быть на этом ПК.
 
 ## Переменные окружения
 

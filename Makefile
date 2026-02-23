@@ -1,6 +1,9 @@
 # Makefile для запуска облака в Docker Compose
 # Использование: make [цель] или make help
 
+# Отключаем Bake: сборка идёт классическим путём (без buildx bake), без лишних контейнеров и ошибки stdin
+export COMPOSE_BAKE=false
+
 COMPOSE = docker compose
 COMPOSE_FILE = docker-compose.yml
 
@@ -28,6 +31,9 @@ help:
 
 up:
 	$(COMPOSE) -f $(COMPOSE_FILE) up -d
+
+up-lan:
+	docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
 
 down:
 	$(COMPOSE) -f $(COMPOSE_FILE) down

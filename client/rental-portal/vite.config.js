@@ -7,13 +7,13 @@ export default defineConfig({
         proxy: {
             // Важно: /api/ws должен быть выше /api, иначе WebSocket уходит на userservice (8052) вместо координатора (8090)
             '/api/ws': {
-                target: 'http://localhost:8090',
+                target: 'http://0.0.0.0:8090',
                 changeOrigin: true,
                 ws: true,
                 rewrite: function (path) { return path.replace(/^\/api\/ws/, '/api/v1/ws'); },
             },
             '/api': {
-                target: 'http://localhost:8052',
+                target: 'http://0.0.0.0:8052',
                 changeOrigin: true,
             },
         },

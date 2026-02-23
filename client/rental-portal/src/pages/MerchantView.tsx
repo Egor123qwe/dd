@@ -374,7 +374,7 @@ export default function MerchantView() {
                               {detailsData.gpus && detailsData.gpus.length > 0
                                 ? (() => {
                                     const g = detailsData.gpus[0]
-                                    return ` ${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                                    return ` ${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ`
                                   })()
                                 : ' отсутствует'}
                             </div>

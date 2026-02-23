@@ -21,5 +21,8 @@ const (
 	StatusCheckURLKey = "status_check.url"
 )
 
+// EnvBackendHost — переменная окружения и .env: IP или хост бэкенда. Если задана, подставляется вместо localhost в auth.service_url, status_check.url и state_machine.connection_url.
+const EnvBackendHost = "BACKEND_HOST"
+
 //go:embed config.yaml
 var Data []byte

@@ -1,0 +1,17 @@
+# Override для доступа к сервисам с другого компьютера в локальной сети.
+# Использование: docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
+# Порты 8052, 8090, 8010, 8011 будут слушать на 0.0.0.0 (доступны по IP ноутбука в LAN).
+
+services:
+  userservice:
+    ports:
+      - "0.0.0.0:8052:8052"
+
+  connectioncoordinatorservice:
+    ports:
+      - "0.0.0.0:8090:8090"
+
+  piko-server:
+    ports:
+      - "0.0.0.0:8011:8001"
+      - "0.0.0.0:8010:8000"

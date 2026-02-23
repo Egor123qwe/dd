@@ -28,7 +28,18 @@
 | runtime daemon port | 30099                           | ROY9_RD_PORT        | --rd-port        |
 | logger level        | INFO                            | ROY9_CLIENT_VERBOSE | --verbose        |
 | cheat mode          | false                           | CHEAT_MODE          | --cheat-mode     |
+| backend host (IP)   | —                                | ROY9_BACKEND_HOST   | —                |
 
+
+## Запуск на другом ПК (бэкенд на ноутбуке в сети)
+
+Скопируйте `.env.example` в `.env` и укажите IP ноутбука с бэкендом:
+
+```bash
+ROY9_BACKEND_HOST=192.168.1.100
+```
+
+Тогда в `auth.service_url`, `status_check.url` и `state_machine.connection_url` вместо `localhost` будет подставлен этот хост. На ноутбуке должен быть поднят compose с `docker-compose.lan.yml` (порты 8052, 8090 доступны по IP).
 
 ## Cheat mode:
 

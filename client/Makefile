@@ -23,9 +23,11 @@ help:
 	@echo "  make clean         — удалить merchant_build/"
 
 build-mac: $(MACOS_DIR)/merchantclient $(MACOS_DIR)/$(RD_SUBDIR)/runtimedaemon
+	@test -f $(MACOS_DIR)/.env || echo 'BACKEND_HOST=' > $(MACOS_DIR)/.env
 	@echo "Готово: $(MACOS_DIR)/"
 
 build-win: $(WINDOWS_DIR)/merchantclient.exe $(WINDOWS_DIR)/$(RD_SUBDIR)/runtimedaemon.exe
+	@test -f $(WINDOWS_DIR)/.env || echo 'BACKEND_HOST=' > $(WINDOWS_DIR)/.env
 	@echo "Готово: $(WINDOWS_DIR)/"
 
 $(MACOS_DIR):

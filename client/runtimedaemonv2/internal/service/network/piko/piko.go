@@ -155,15 +155,15 @@ func (s service) State(ctx context.Context, req []pikoModel.Endpoint) (pikoModel
 		}
 
 		// disable availability check for endpoints
-		switch requested.Protocol {
-		case template.HTTP:
-			if err := s.checkHTTPEndpoint(ctx, requested); err != nil {
-				result.StatusMsg = err.Error()
-				result.Status = pikoModel.Error
-
-				return result, nil
-			}
-		}
+		//switch requested.Protocol {
+		//case template.HTTP:
+		//	if err := s.checkHTTPEndpoint(ctx, requested); err != nil {
+		//		result.StatusMsg = err.Error()
+		//		result.Status = pikoModel.Error
+		//
+		//		return result, nil
+		//	}
+		//}
 
 		endpointInfo := pikoModel.EndpointInfo{
 			Protocol: requested.Protocol,

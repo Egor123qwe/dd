@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	config2 "gitlab.roy9.ru/roy9/backend/clientside/merchantclient/config"
 	"gitlab.roy9.ru/roy9/backend/clientside/merchantclient/internal/service/runtimedaemon/api"
 	"gitlab.roy9.ru/roy9/backend/clientside/merchantclient/pkg/command"
 	proto "gitlab.roy9.ru/roy9/backend/clientside/merchantclient/pkg/proto/runtimedaemon/generate"
@@ -80,7 +81,11 @@ func (c client) Serve(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("runtime daemon path: %w", err)
 	}
-	_, err = c.cmd.Run(ctx, []string{daemonPath})
+	args := []string{daemonPath}
+	if host := strings.TrimSpace(os.Getenv(config2.EnvBackendHost)); host != "" {
+		args = append(args, "--backend-host="+host)
+	}
+	_, err = c.cmd.Run(ctx, args)
 	if err != nil && ctx.Err() == nil {
 		return fmt.Errorf("runtime daemon failed: %v", err)
 	}

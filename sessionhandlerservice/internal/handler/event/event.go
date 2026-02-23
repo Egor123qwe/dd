@@ -1,6 +1,8 @@
 package event
 
 import (
+	"context"
+
 	"github.com/op/go-logging"
 	"gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/broker/kafka"
 	"gitlab.roy9.ru/roy9/backend/statemachine/sessionhandlerservice/internal/broker/kafka/producer"
@@ -51,11 +53,17 @@ func (h handler) initEvents() {
 	h.router.Add(string(event.StartSessionEvent), h.InitSession)
 	h.router.Add(string(event.StopSessionEvent), h.StopSession)
 
-	h.router.Add(string(event.ExpiredRentEvent), h.StopSession)
-	h.router.Add(string(event.ExpiredSessionEvent), h.MerchantStopped)
-	h.router.Add(string(event.ExpiredClientEvent), h.ClientExpired)
+	// Временно отключено: завершение сессии по expired (rent/client/session). Чтобы включить — заменить IgnoreExpired на h.StopSession / h.MerchantStopped / h.ClientExpired.
+	h.router.Add(string(event.ExpiredRentEvent), h.IgnoreExpired)
+	h.router.Add(string(event.ExpiredSessionEvent), h.IgnoreExpired)
+	h.router.Add(string(event.ExpiredClientEvent), h.IgnoreExpired)
 
 	h.router.Add(string(event.ShareP2PStop), h.MerchantStopped)
 
 	h.router.Add(string(event.RentRequestStatusUpdatedEvent), h.UpdateRentStatus)
+}
+
+// IgnoreExpired — временный no-op: не завершаем сессию по причине expired (rent/client/session).
+func (h handler) IgnoreExpired(ctx context.Context, _ []byte) error {
+	return nil
 }

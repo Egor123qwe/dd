@@ -34,6 +34,9 @@ type CreateContainerReq struct {
 	Volumes []Volume
 	Envs    []string
 
+	// Cmd — аргументы к ENTRYPOINT образа (например для code-server: ["--auth", "none"]).
+	Cmd []string
+
 	CPUs    int64
 	Memory  int64
 	Storage int64
@@ -85,23 +88,21 @@ func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (s
 		},
 	}
 
-	if req.Storage > 0 {
-		// if hostConfig.StorageOpt == nil {
-		// 	hostConfig.StorageOpt = make(map[string]string)
-		// }
-		//hostConfig.StorageOpt["size"] = fmt.Sprintf("%d", req.Storage)
+	config := &container.Config{
+		Image: req.Image,
+		Env:   req.Envs,
+		Labels: map[string]string{
+			"managed_by": "go-service",
+		},
+	}
+	if len(req.Cmd) > 0 {
+		config.Cmd = req.Cmd
 	}
 
 	// Создаем контейнер
 	result, err := s.dockerApi.ContainerCreate(
 		ctx,
-		&container.Config{
-			Image: req.Image,
-			Env:   req.Envs,
-			Labels: map[string]string{
-				"managed_by": "go-service",
-			},
-		},
+		config,
 		hostConfig,
 		&network.NetworkingConfig{},
 		&v1.Platform{},
@@ -112,10 +113,14 @@ func (s service) CreateContainer(ctx context.Context, req CreateContainerReq) (s
 		// Пробуем найти портируемый порт если имя занято
 		if strings.Contains(err.Error(), "already in use") {
 			req.Name = ""
+			fallbackConfig := &container.Config{Image: req.Image, Env: req.Envs}
+			if len(req.Cmd) > 0 {
+				fallbackConfig.Cmd = req.Cmd
+			}
 			result, err = s.dockerApi.ContainerCreate(
 				ctx,
-				&container.Config{Image: req.Image, Env: req.Envs},
-				&container.HostConfig{PublishAllPorts: true, Resources: resources, Mounts: mounts},
+				fallbackConfig,
+				hostConfig,
 				&network.NetworkingConfig{},
 				&v1.Platform{},
 				"",

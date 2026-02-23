@@ -664,7 +664,7 @@ export default function ClientView() {
                       {activeMerchantDetails.gpus && activeMerchantDetails.gpus.length > 0 ? (
                         (() => {
                           const g = activeMerchantDetails.gpus[0]
-                          return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                          return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ`
                         })()
                       ) : (
                         'отсутствует'
@@ -1059,7 +1059,7 @@ export default function ClientView() {
                             {m.details.gpus && m.details.gpus.length > 0 ? (
                               (() => {
                                 const g = m.details.gpus[0]
-                                return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ${g.dlperf != null ? `, производительность ${g.dlperf}` : ''}`
+                                return `${g.name} — видеопамять ${ramKbToGb(g.available_vram).toFixed(1)} ГБ`
                               })()
                             ) : (
                               'отсутствует'
